@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi CBT Online - Integrasi Gemini AI & Material Importer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; font-size: 12px; }
+            .print-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans antialiased select-none flex flex-col justify-between">
+
+    <!-- ================= 1. HALAMAN UTAMA / BERANDA LOGIN ================= -->
+    <div id="screen-login" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-xl overflow-hidden border border-slate-200">
+            <!-- Banner Header -->
+            <div class="bg-gradient-to-r from-indigo-700 via-indigo-800 to-blue-900 text-white p-6 sm:p-8 text-center relative">
+                <div class="inline-flex bg-white/10 backdrop-blur-md p-4 rounded-2xl mb-3 border border-white/20 shadow-inner">
+                    <i class="fa-solid fa-laptop-code text-3xl text-amber-300"></i>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">CBT AI Examination</h1>
+                <p class="text-indigo-200 text-xs sm:text-sm mt-1">Sistem Ujian Online Interaktif Berbasis Web & AI Integrasi</p>
+
+                <!-- Tombol Impor Bank Soal / Gemini & Kelola -->
+                <button onclick="openImporterModal('manage')" class="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white text-xs px-3.5 py-2 rounded-xl border border-white/20 backdrop-blur-xs transition flex items-center gap-1.5 shadow-sm font-semibold">
+                    <i class="fa-solid fa-folder-open text-amber-300"></i> Kelola Bank Soal
+                </button>
+            </div>
+
+            <!-- Form Data Diri Peserta -->
+            <form onsubmit="handleStartExam(event)" class="p-6 sm:p-8 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap Peserta</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="text" id="studentName" placeholder="Masukkan nama peserta..." required class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nomor Ujian / NISN</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-id-card absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="text" id="studentId" placeholder="Contoh: 2026-CBT-001" required class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+
+                <!-- Pilihan Paket Ujian (Layout Baru Rapi & Responsif) -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Paket Ujian</label>
+                    <select id="examSelect" class="w-full p-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium bg-slate-50 truncate mb-2">
+                        <!-- Diisi otomatis lewat JavaScript -->
+                    </select>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="openImporterModal('manage')" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs">
+                            <i class="fa-solid fa-folder-open text-indigo-600"></i> Kelola Bank Soal
+                        </button>
+                        <button type="button" onclick="openImporterModal('auto')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Buat Soal Baru (AI)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Petunjuk singkat -->
+                <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-2xl text-xs text-amber-900 space-y-1">
+                    <p class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-amber-600"></i> Petunjuk Pelaksanaan:</p>
+                    <ul class="list-disc list-inside space-y-0.5 text-amber-800/90 pl-1">
+                        <li>Timer akan mulai berjalan mundur setelah menekan "Mulai Ujian".</li>
+                        <li>Gunakan nomor navigasi di sebelah kanan untuk melompat antar soal.</li>
+                        <li>Centang "Ragu-Ragu" jika belum yakin dengan pilihan Anda.</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> Mulai Kerjakan Ujian
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= 2. RUANG UJIAN CBT ================= -->
+    <div id="screen-exam" class="min-h-screen hidden flex-col">
+        <!-- Header Ruang Ujian -->
+        <header class="bg-indigo-900 text-white px-4 py-3 shadow-md flex justify-between items-center sticky top-0 z-40">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-800 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider hidden sm:block">
+                    CBT ONLINE
+                </div>
+                <div>
+                    <h2 id="examHeaderTitle" class="font-bold text-sm sm:text-base leading-tight">Ujian Simulasi</h2>
+                    <p id="examHeaderStudent" class="text-indigo-200 text-xs">Peserta: -</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Countdown Timer -->
+                <div class="bg-indigo-950 border border-indigo-700/60 px-3.5 py-1.5 rounded-xl flex items-center gap-2 shadow-inner">
+                    <i class="fa-regular fa-clock text-amber-400 animate-pulse"></i>
+                    <span id="timerDisplay" class="font-mono font-bold text-sm sm:text-base tracking-wider text-amber-300">00:00:00</span>
+                </div>
+
+                <!-- Tombol Fullscreen -->
+                <button onclick="toggleFullscreen()" title="Layar Penuh" class="bg-indigo-800 hover:bg-indigo-700 text-white p-2 rounded-xl text-xs transition no-print">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+
+                <!-- Tombol Selesai Ujian -->
+                <button type="button" onclick="openFinishModal()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-flag-checkered"></i> <span>Selesai</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Area Konten Soal & Navigasi -->
+        <main class="flex-1 p-3 sm:p-5 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+            <!-- Kolom Soal (8/12) -->
+            <div class="lg:col-span-8 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[450px]">
+                
+                <!-- Sub Header Soal -->
+                <div class="bg-slate-50 border-b border-slate-200 p-3 sm:p-4 flex justify-between items-center">
+                    <span class="font-bold text-xs sm:text-sm bg-indigo-100 text-indigo-800 px-3 py-1 rounded-lg flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-pen"></i> Soal No. <span id="currentQuestionNumber">1</span>
+                    </span>
+
+                    <!-- Status Ragu Ragu -->
+                    <label class="flex items-center gap-2 text-xs sm:text-sm font-bold text-amber-700 cursor-pointer bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1 rounded-lg transition select-none">
+                        <input type="checkbox" id="doubtCheckbox" onchange="toggleDoubtStatus()" class="rounded text-amber-500 focus:ring-amber-400 w-4 h-4 cursor-pointer">
+                        <span>Ragu-Ragu</span>
+                    </label>
+                </div>
+
+                <!-- Teks Pertanyaan -->
+                <div class="p-5 sm:p-6 flex-1 custom-scroll overflow-y-auto">
+                    <div id="questionText" class="text-sm sm:text-base text-slate-800 leading-relaxed font-medium mb-6">
+                        <!-- Teks soal diisi JS -->
+                    </div>
+
+                    <!-- Container Opsi Jawaban -->
+                    <div id="optionsContainer" class="space-y-3">
+                        <!-- Diisi Opsi JS -->
+                    </div>
+                </div>
+
+                <!-- Footer Navigasi Bawah -->
+                <div class="bg-slate-50 border-t border-slate-200 p-3 sm:p-4 flex justify-between items-center">
+                    <button onclick="navigateQuestion(-1)" id="btnPrev" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-chevron-left"></i> Sebelumnya
+                    </button>
+                    <button onclick="navigateQuestion(1)" id="btnNext" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+                        <span id="btnNextText">Selanjutnya</span> <i id="btnNextIcon" class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Kolom Grid Nomor Soal (4/12) -->
+            <div class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col h-fit">
+                <div class="flex items-center justify-between border-b pb-3 mb-3">
+                    <h3 class="font-bold text-sm text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-border-all text-indigo-600"></i> Navigasi Nomor
+                    </h3>
+                    <span id="answeredBadge" class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                        0 / 0 Terjawab
+                    </span>
+                </div>
+
+                <!-- Keterangan Indikator Warna -->
+                <div class="grid grid-cols-3 gap-1.5 text-[10px] text-slate-600 font-bold mb-4 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-md bg-emerald-500 inline-block"></span> Dijawab
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-md bg-amber-400 inline-block"></span> Ragu-Ragu
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-md bg-slate-200 border inline-block"></span> Kosong
+                    </div>
+                </div>
+
+                <!-- Tombol Nomor Soal -->
+                <div id="questionGrid" class="grid grid-cols-5 gap-2 max-h-[360px] overflow-y-auto custom-scroll p-1">
+                    <!-- Nomor di-generate via JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ================= 3. HALAMAN REKAP HASIL & PEMBAHASAN ================= -->
+    <div id="screen-result" class="min-h-screen hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-3xl overflow-hidden border border-slate-200 print-card my-6">
+            <!-- Header Rekap -->
+            <div class="bg-gradient-to-r from-emerald-600 via-teal-700 to-indigo-800 text-white p-6 sm:p-8 text-center relative">
+                <div class="inline-flex bg-white/20 p-4 rounded-full mb-2 backdrop-blur-md border border-white/20 shadow-inner">
+                    <i class="fa-solid fa-trophy text-4xl text-amber-300"></i>
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-black">Ujian Telah Selesai</h2>
+                <p class="text-emerald-100 text-xs sm:text-sm">Laporan Hasil, Rekapitulasi Nilai & Evaluasi Pembahasan</p>
+            </div>
+
+            <div class="p-6 sm:p-8 space-y-6">
+                <!-- Info Identitas -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm">
+                    <div>
+                        <span class="text-slate-400 block font-medium">Nama Peserta:</span>
+                        <strong id="resStudentName" class="text-slate-800 block truncate">-</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block font-medium">Nomor Ujian:</span>
+                        <strong id="resStudentId" class="text-slate-800 block truncate">-</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block font-medium">Mata Uji:</span>
+                        <strong id="resExamTitle" class="text-slate-800 block truncate">-</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block font-medium">Tanggal Selesai:</span>
+                        <strong id="resTimestamp" class="text-slate-800 block truncate">-</strong>
+                    </div>
+                </div>
+
+                <!-- Kartu Skor Raksasa -->
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl">
+                        <div id="resScore" class="text-3xl sm:text-4xl font-black text-emerald-600">0</div>
+                        <div class="text-[11px] font-bold text-emerald-800 uppercase mt-1">Nilai Akhir (0-100)</div>
+                    </div>
+                    <div class="bg-sky-50 border border-sky-200 p-4 rounded-2xl">
+                        <div id="resCorrect" class="text-3xl sm:text-4xl font-black text-sky-600">0</div>
+                        <div class="text-[11px] font-bold text-sky-800 uppercase mt-1">Jawaban Benar</div>
+                    </div>
+                    <div class="bg-rose-50 border border-rose-200 p-4 rounded-2xl">
+                        <div id="resWrong" class="text-3xl sm:text-4xl font-black text-rose-600">0</div>
+                        <div class="text-[11px] font-bold text-rose-800 uppercase mt-1">Salah / Kosong</div>
+                    </div>
+                </div>
+
+                <!-- Kotak Umpan Balik Performa AI -->
+                <div id="feedbackBox" class="bg-indigo-50/80 border border-indigo-200 p-4 rounded-2xl flex items-start gap-3">
+                    <i class="fa-solid fa-robot text-indigo-600 text-2xl mt-0.5"></i>
+                    <div>
+                        <h4 class="font-bold text-xs sm:text-sm text-indigo-950 mb-0.5">Evaluasi & Feedback Singkat:</h4>
+                        <p id="feedbackText" class="text-xs text-indigo-800 leading-relaxed">
+                            Sedang menghitung performa...
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Accordion Pembahasan Jawaban -->
+                <div class="border border-slate-200 rounded-2xl overflow-hidden no-print">
+                    <button onclick="toggleReviewSection()" class="w-full bg-slate-100 hover:bg-slate-200 p-3.5 text-xs sm:text-sm font-bold text-slate-700 flex justify-between items-center transition">
+                        <span><i class="fa-solid fa-magnifying-glass-chart text-indigo-600 mr-2"></i> Lihat Detail Pembahasan Jawaban Per Nomor</span>
+                        <i id="reviewChevron" class="fa-solid fa-chevron-down transition-transform"></i>
+                    </button>
+                    <div id="reviewContainer" class="hidden p-4 bg-slate-50 border-t space-y-4 max-h-[400px] overflow-y-auto custom-scroll">
+                        <!-- Diisi via JS -->
+                    </div>
+                </div>
+
+                <!-- Opsi Tombol Aksi Lengkap -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 no-print pt-2">
+                    <button onclick="restartCurrentExam()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-2 rounded-xl shadow transition text-xs flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-rotate-right"></i> Ulangi Ujian
+                    </button>
+                    <button onclick="openImporterModal()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-2 rounded-xl shadow transition text-xs flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Tambah Soal
+                    </button>
+                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-2 rounded-xl shadow transition text-xs flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-print"></i> Cetak Hasil
+                    </button>
+                    <button onclick="returnToHome()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-2 rounded-xl shadow transition text-xs flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-house"></i> Halaman Utama
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 4. MODAL KONFIRMASI SELESAI UJIAN ================= -->
+    <div id="finishModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="bg-rose-600 text-white p-5 text-center">
+                <div class="inline-flex bg-white/20 p-3 rounded-full mb-2">
+                    <i class="fa-solid fa-circle-question text-3xl"></i>
+                </div>
+                <h3 class="font-black text-lg">Selesaikan Ujian Sekarang?</h3>
+                <p class="text-rose-100 text-xs mt-0.5">Pastikan Anda telah memeriksa jawaban Anda.</p>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <div class="bg-slate-50 border p-4 rounded-2xl space-y-2 text-xs">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <span class="text-slate-500 font-medium">Soal Terjawab:</span>
+                        <strong id="modalAnsweredCount" class="text-emerald-600 font-bold text-sm">0 Soal</strong>
+                    </div>
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <span class="text-slate-500 font-medium">Masih Ragu-Ragu:</span>
+                        <strong id="modalDoubtCount" class="text-amber-600 font-bold text-sm">0 Soal</strong>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500 font-medium">Belum Dijawab:</span>
+                        <strong id="modalUnansweredCount" class="text-rose-600 font-bold text-sm">0 Soal</strong>
+                    </div>
+                </div>
+
+                <div id="warningUnansweredText" class="hidden text-xs text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-base shrink-0"></i>
+                    <span>Masih ada soal yang belum diisi! Yakin ingin menyelesaikan?</span>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeFinishModal()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl transition text-xs">
+                        Kembali Periksa
+                    </button>
+                    <button type="button" onclick="finishExam()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl shadow-md transition text-xs">
+                        Ya, Selesaikan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 5. MODAL IMPOR GEMINI AI & FILE RUJUKAN MATERI ================= -->
+    <div id="importerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
+            <!-- Header Modal -->
+            <div class="bg-gradient-to-r from-indigo-900 to-slate-900 text-white p-4 sm:p-5 flex justify-between items-center">
+                <div class="flex items-center gap-2.5">
+                    <div class="bg-indigo-600/50 p-2 rounded-xl border border-indigo-400/30">
+                        <i class="fa-solid fa-boxes-stacked text-amber-300 text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm sm:text-base leading-tight">Bank Soal & Generator Gemini AI</h3>
+                        <p class="text-[11px] text-indigo-200">Kelola paket soal tersimpan atau buat soal baru dari materi/file</p>
+                    </div>
+                </div>
+                <button onclick="closeImporterModal()" class="text-indigo-200 hover:text-white text-xl transition p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Tab Switcher (3 TAB) -->
+            <div class="bg-slate-100 p-2 border-b flex flex-wrap sm:flex-nowrap gap-1.5 text-xs font-bold px-4">
+                <button type="button" onclick="switchImportTab('manage')" id="tabManageBtn" class="flex-1 py-2 px-3 rounded-xl bg-white text-indigo-700 shadow-xs border border-indigo-200 flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-folder-open text-indigo-600"></i> Daftar Bank Soal (<span id="savedPkgCountBadge">0</span>)
+                </button>
+                <button type="button" onclick="switchImportTab('auto')" id="tabAutoBtn" class="flex-1 py-2 px-3 rounded-xl text-slate-600 hover:bg-white/60 flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Buat Otomatis via AI + File Rujukan
+                </button>
+                <button type="button" onclick="switchImportTab('manual')" id="tabManualBtn" class="flex-1 py-2 px-3 rounded-xl text-slate-600 hover:bg-white/60 flex items-center justify-center gap-2 transition">
+                    <i class="fa-solid fa-code text-slate-500"></i> Tempel JSON Manual
+                </button>
+            </div>
+
+            <!-- Body Modal -->
+            <div class="p-5 sm:p-6 custom-scroll overflow-y-auto flex-1 space-y-5">
+                
+                <!-- TAB 0: DAFTAR & KELOLA BANK SOAL TERSIMPAN -->
+                <div id="tabManageContent" class="space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <div>
+                            <h4 class="font-bold text-xs sm:text-sm text-slate-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-database text-indigo-600"></i> Katalog Paket Soal yang Pernah Dibuat
+                            </h4>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Semua paket soal tersimpan di peramban dan siap dimainkan atau diunduh.</p>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <label class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0">
+                                <i class="fa-solid fa-file-import"></i> Load File JSON
+                                <input type="file" id="jsonFileInput" onchange="importPackageFromFile(event)" accept=".json" class="hidden">
+                            </label>
+                            <button type="button" onclick="exportAllPackages()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-2xs">
+                                <i class="fa-solid fa-file-export text-amber-300"></i> Ekspor Semua
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Container Kartu Paket Soal -->
+                    <div id="managePackagesList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        <!-- Diisi via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- TAB 1: GENERATE OTOMATIS VIA GEMINI API -->
+                <div id="tabAutoContent" class="hidden space-y-4">
+                    <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-4">
+                        <h4 class="font-bold text-xs sm:text-sm text-slate-800 flex items-center gap-1.5 mb-2">
+                            <i class="fa-solid fa-file-arrow-up text-indigo-600"></i> File Rujukan / Materi Pembelajaran (Custom Question Context)
+                        </h4>
+
+                        <!-- Input API Key Gemini -->
+                        <div class="bg-indigo-50/80 border border-indigo-200 p-3 rounded-2xl space-y-1">
+                            <label class="block text-[11px] font-bold text-indigo-950">
+                                <i class="fa-solid fa-key text-amber-500 mr-1"></i> Gemini API Key (Wajib jika di-deploy / dibuka di luar editor):
+                            </label>
+                            <div class="flex gap-2 items-center">
+                                <input type="password" id="geminiApiKeyInput" placeholder="Masukkan API Key (misal: AIzaSy...)" class="flex-1 p-2 text-xs border border-indigo-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-mono">
+                                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-2 rounded-xl transition shrink-0 flex items-center gap-1 shadow-xs">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Ambil Key Gratis
+                                </a>
+                            </div>
+                            <p class="text-[10px] text-indigo-800">Dapatkan API Key gratis di Google AI Studio. Kunci akan tersimpan secara otomatis di peramban Anda.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Upload Berkas Rujukan (PDF, TXT, Gambar PNG/JPG):</label>
+                                <div class="flex items-center gap-2 bg-white p-1.5 border border-slate-300 rounded-xl">
+                                    <label class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition cursor-pointer shrink-0 shadow-2xs">
+                                        Pilih File
+                                        <input type="file" id="referenceFileInput" onchange="handleReferenceFileUpload(event)" accept="image/*,.txt,.md,.pdf,application/pdf" class="hidden">
+                                    </label>
+                                    <span id="fileStatusText" class="text-xs text-slate-500 truncate">Tidak ada file yang dipilih</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Topik Utama / Instruksi Tambahan:</label>
+                                <input type="text" id="aiTopicInput" placeholder="Contoh: Buat 5 soal kuis Biologi Sel Bab 3 pilihan ganda A-E" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">Catatan Teks / Rangkuman Materi Lengkap:</label>
+                            <textarea id="aiTextContextInput" rows="4" placeholder="Tempel materi modul, kisi-kisi, rangkuman bab, atau soal acuan di sini agar Gemini membuatkan soal dari materi ini..." class="w-full p-3 font-sans text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white"></textarea>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2">
+                            <div class="flex items-center gap-2">
+                                <label class="text-[11px] font-bold text-slate-700">Jumlah Soal:</label>
+                                <select id="aiQuestionCount" class="p-2 text-xs border border-slate-300 rounded-xl bg-white font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="5">5 Soal</option>
+                                    <option value="10" selected>10 Soal</option>
+                                    <option value="15">15 Soal</option>
+                                    <option value="20">20 Soal</option>
+                                </select>
+                            </div>
+                            <button type="button" onclick="generateExamWithGemini()" id="btnGenerateGemini" class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
+                                <i class="fa-solid fa-bolt text-amber-300"></i> Generate Soal Otomatis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: TEMPEL JSON MANUAL -->
+                <div id="tabManualContent" class="hidden space-y-4">
+                    <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl text-xs text-amber-900 flex justify-between items-center">
+                        <div>
+                            <span class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-copy text-amber-600"></i> Salin Prompt untuk Gemini Chat:</span>
+                            <p class="text-[11px] text-amber-800 mt-0.5">Gunakan tombol di samping jika Anda lebih suka obrolan manual di aplikasi Gemini.</p>
+                        </div>
+                        <button onclick="copyGeminiPrompt()" class="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition shrink-0 flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i> Salin Prompt
+                        </button>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Tempel (Paste) Hasil JSON Gemini Di Sini</label>
+                        <textarea id="importJsonArea" rows="7" placeholder='[
+  {
+    "question": "Apa fungsi utama mitokondria pada sel?",
+    "options": ["Sintesis protein", "Respirasi dan penghasil energi", "Pencernaan sel", "Penyimpanan air", "Pembelahan sel"],
+    "answer": 1,
+    "explanation": "Mitokondria berfungsi sebagai organel penghasil energi (ATP) melalui proses respirasi sel."
+  }
+]' class="w-full p-3 font-mono text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50"></textarea>
+                    </div>
+                </div>
+
+                <!-- Metadata Paket Soal Baru -->
+                <div id="newPkgMetaSection" class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-200">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Judul Paket Soal</label>
+                        <input type="text" id="importExamTitle" placeholder="Contoh: Kuis Biologi Sel - Kelas X" class="w-full p-2.5 text-xs sm:text-sm border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Durasi Ujian (Menit)</label>
+                        <input type="number" id="importExamDuration" value="30" min="1" class="w-full p-2.5 text-xs sm:text-sm border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Modal Impor -->
+            <div class="bg-slate-100 p-4 sm:p-5 flex justify-between items-center border-t border-slate-200">
+                <button type="button" onclick="closeImporterModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold px-4 py-2 rounded-xl transition">
+                    Tutup
+                </button>
+                <button type="button" id="btnSavePackageFooter" onclick="saveImportedPackage()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2 rounded-xl shadow transition hidden">
+                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> Simpan Paket Soal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 6. MODAL PRATINJAU PAKET SOAL (STANDALONE) ================= -->
+    <div id="previewModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden">
+            <div class="bg-slate-900 text-white p-4 sm:p-5 flex justify-between items-center">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-eye text-amber-300 text-lg"></i>
+                    <div>
+                        <h3 id="previewModalTitle" class="font-bold text-sm sm:text-base leading-tight">Pratinjau Paket Soal</h3>
+                        <p id="previewModalSubtitle" class="text-[11px] text-slate-400">0 Pertanyaan</p>
+                    </div>
+                </div>
+                <button onclick="closePreviewModal()" class="text-slate-400 hover:text-white text-xl p-1 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="previewModalBody" class="p-4 sm:p-6 custom-scroll overflow-y-auto flex-1 space-y-4">
+                <!-- Diisi via JS -->
+            </div>
+            <div class="bg-slate-100 p-4 flex justify-end gap-2 border-t border-slate-200">
+                <button type="button" onclick="closePreviewModal()" class="bg-slate-300 hover:bg-slate-400 text-slate-800 text-xs font-bold px-5 py-2 rounded-xl transition">
+                    Tutup Pratinjau
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Hak Cipta -->
+    <footer class="text-center py-3 text-[11px] text-slate-400 no-print">
+        CBT Examination System &copy; 2026 - Didukung oleh Integrasi Gemini AI
+    </footer>
+
+    <!-- ================= JAVASCRIPT CBT ENGINE ================= -->
+    <script>
+        const STORAGE_KEY = 'cbt_gemini_app_data_v3';
+
+        // Bank Soal Default (Demo)
+        const DEFAULT_PACKAGES = [
+            {
+                id: 'pkg-demo-1',
+                title: 'Simulasi Umum CBT (Sains & Umum)',
+                duration: 10,
+                questions: [
+                    {
+                        question: "Manakah planet dalam tata surya kita yang paling dekat dengan Matahari?",
+                        options: ["Venus", "Bumi", "Merkurius", "Mars", "Jupiter"],
+                        answer: 2,
+                        explanation: "Merkurius adalah planet terdekat dari Matahari dengan jarak rata-rata sekitar 57,9 juta km."
+                    },
+                    {
+                        question: "Proses pembuatan makanan pada tumbuhan hijau dengan bantuan cahaya matahari dinamakan...",
+                        options: ["Respirasi", "Fotosintesis", "Transpirasi", "Osmosis", "Fermentasi"],
+                        answer: 1,
+                        explanation: "Fotosintesis merubah H2O dan CO2 menjadi Glukosa dan O2 menggunakan energi cahaya."
+                    },
+                    {
+                        question: "Unsur kimia dengan lambang 'O' dalam tabel periodik memiliki nomor atom 8, yaitu...",
+                        options: ["Emas (Aurum)", "Oksigen", "Perak (Argentum)", "Osmium", "Hidrogen"],
+                        answer: 1,
+                        explanation: "O merupakan simbol kimia untuk Oksigen."
+                    },
+                    {
+                        question: "Berapakah hasil dari akar kuadrat dari 144 dikalikan 2?",
+                        options: ["12", "18", "24", "36", "48"],
+                        answer: 2,
+                        explanation: "Akar 144 = 12. Kemudian 12 x 2 = 24."
+                    }
+                ]
+            }
+        ];
+
+        // State Global Ujian
+        let examPackages = [];
+        let currentExam = null;
+        let currentIndex = 0;
+        let studentAnswers = {}; 
+        let doubtStatus = {};    
+        let timerInterval = null;
+        let remainingSeconds = 0;
+        let currentStudent = { name: '', id: '' };
+        let attachedFileBase64 = null;
+        let attachedFileType = null;
+
+        // Inisialisasi saat Halaman Dimuat
+        window.onload = function() {
+            loadPackages();
+            renderExamSelectOptions();
+            loadSavedApiKey();
+
+            window.addEventListener('beforeunload', function(e) {
+                if (currentExam && remainingSeconds > 0 && !document.getElementById('screen-exam').classList.contains('hidden')) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
+        };
+
+        function loadSavedApiKey() {
+            const savedKey = localStorage.getItem('cbt_gemini_api_key') || '';
+            const keyInput = document.getElementById('geminiApiKeyInput');
+            if (keyInput) keyInput.value = savedKey;
+        }
+
+        function loadPackages() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    examPackages = JSON.parse(saved);
+                } catch(e) {
+                    examPackages = DEFAULT_PACKAGES;
+                }
+            } else {
+                examPackages = DEFAULT_PACKAGES;
+                savePackages();
+            }
+        }
+
+        function savePackages() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(examPackages));
+            } catch(e) { console.error('Gagal menyimpan ke storage:', e); }
+        }
+
+        function renderExamSelectOptions() {
+            const select = document.getElementById('examSelect');
+            if (!select) return;
+            select.innerHTML = '';
+            examPackages.forEach(pkg => {
+                const opt = document.createElement('option');
+                opt.value = pkg.id;
+                opt.innerText = `${pkg.title} (${pkg.questions.length} Soal - ${pkg.duration} Mnt)`;
+                select.appendChild(opt);
+            });
+
+            const badge = document.getElementById('savedPkgCountBadge');
+            if (badge) badge.innerText = examPackages.length;
+        }
+
+        // Helper untuk Membersihkan Tag Markdown pada JSON Gemini
+        function cleanJsonText(raw) {
+            if (!raw) return '';
+            let cleaned = raw.trim();
+            cleaned = cleaned.replace(/^```(?:json)?/gi, '').replace(/```$/gi, '').trim();
+            return cleaned;
+        }
+
+        // ================= INTEGRASI LANGSUNG GEMINI AI & KELOLA BANK SOAL =================
+
+        function openImporterModal(defaultTab = 'manage') {
+            document.getElementById('importerModal').classList.remove('hidden');
+            document.getElementById('importerModal').classList.add('flex');
+            switchImportTab(defaultTab);
+        }
+
+        function closeImporterModal() {
+            document.getElementById('importerModal').classList.add('hidden');
+            document.getElementById('importerModal').classList.remove('flex');
+        }
+
+        function switchImportTab(tab) {
+            const manageBtn = document.getElementById('tabManageBtn');
+            const autoBtn = document.getElementById('tabAutoBtn');
+            const manualBtn = document.getElementById('tabManualBtn');
+
+            const manageContent = document.getElementById('tabManageContent');
+            const autoContent = document.getElementById('tabAutoContent');
+            const manualContent = document.getElementById('tabManualContent');
+            const metaSection = document.getElementById('newPkgMetaSection');
+            const saveBtnFooter = document.getElementById('btnSavePackageFooter');
+
+            const inactiveClass = "flex-1 py-2 px-3 rounded-xl text-slate-600 hover:bg-white/60 flex items-center justify-center gap-2 transition";
+            const activeClass = "flex-1 py-2 px-3 rounded-xl bg-white text-indigo-700 shadow-xs border border-indigo-200 flex items-center justify-center gap-2 transition font-bold";
+
+            manageBtn.className = inactiveClass;
+            autoBtn.className = inactiveClass;
+            manualBtn.className = inactiveClass;
+
+            manageContent.classList.add('hidden');
+            autoContent.classList.add('hidden');
+            manualContent.classList.add('hidden');
+
+            if (tab === 'manage') {
+                manageBtn.className = activeClass;
+                manageContent.classList.remove('hidden');
+                metaSection.classList.add('hidden');
+                saveBtnFooter.classList.add('hidden');
+                renderSavedPackagesList();
+            } else if (tab === 'auto') {
+                autoBtn.className = activeClass;
+                autoContent.classList.remove('hidden');
+                metaSection.classList.remove('hidden');
+                saveBtnFooter.classList.remove('hidden');
+            } else {
+                manualBtn.className = activeClass;
+                manualContent.classList.remove('hidden');
+                metaSection.classList.remove('hidden');
+                saveBtnFooter.classList.remove('hidden');
+            }
+        }
+
+        // Render Katalog Paket Soal
+        function renderSavedPackagesList() {
+            const container = document.getElementById('managePackagesList');
+            container.innerHTML = '';
+
+            if (examPackages.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-2 text-center py-8 bg-slate-50 border border-dashed rounded-2xl">
+                        <i class="fa-solid fa-folder-open text-slate-300 text-3xl mb-2"></i>
+                        <p class="text-xs text-slate-500 font-medium">Belum ada paket soal tersimpan.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            examPackages.forEach((pkg) => {
+                const card = document.createElement('div');
+                card.className = "bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs hover:shadow-sm transition flex flex-col justify-between gap-3";
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-1.5">
+                            <h4 class="font-bold text-xs sm:text-sm text-slate-800 line-clamp-1">${escapeAndFormatHTML(pkg.title)}</h4>
+                            <span class="text-[10px] font-extrabold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-lg border border-indigo-100 shrink-0">${pkg.questions.length} Soal</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-[11px] text-slate-500 font-medium">
+                            <span><i class="fa-regular fa-clock text-slate-400 mr-1"></i>${pkg.duration} Menit</span>
+                            <span>•</span>
+                            <span><i class="fa-solid fa-hashtag text-slate-400 mr-1"></i>ID: ${pkg.id.substring(0, 10)}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-1.5 pt-2 border-t border-slate-100">
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="selectPackageForExam('${pkg.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow-2xs">
+                                <i class="fa-solid fa-play text-[10px]"></i> Pilih Ujian
+                            </button>
+                            <button type="button" onclick="previewPackage('${pkg.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition flex items-center gap-1" title="Lihat Isi Soal & Kunci Jawaban">
+                                <i class="fa-solid fa-eye text-slate-500"></i> Pratinjau
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="exportSinglePackage('${pkg.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition" title="Unduh File JSON Backup">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
+                            <button type="button" onclick="deletePackage('${pkg.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition" title="Hapus Paket Soal Ini">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function selectPackageForExam(pkgId) {
+            const select = document.getElementById('examSelect');
+            select.value = pkgId;
+            closeImporterModal();
+        }
+
+        function previewPackage(pkgId) {
+            const pkg = examPackages.find(p => p.id === pkgId);
+            if (!pkg) return;
+
+            document.getElementById('previewModalTitle').innerText = pkg.title;
+            document.getElementById('previewModalSubtitle').innerText = `${pkg.questions.length} Pertanyaan • Durasi ${pkg.duration} Menit`;
+
+            const body = document.getElementById('previewModalBody');
+            body.innerHTML = '';
+            const letters = ['A', 'B', 'C', 'D', 'E'];
+
+            pkg.questions.forEach((q, idx) => {
+                const item = document.createElement('div');
+                item.className = "bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2 text-xs sm:text-sm";
+
+                let optionsHTML = '';
+                q.options.forEach((opt, oIdx) => {
+                    const isCorrect = (oIdx === q.answer);
+                    optionsHTML += `
+                        <div class="p-2 rounded-xl text-xs font-medium border flex items-center justify-between ${
+                            isCorrect ? 'bg-emerald-100/70 border-emerald-300 text-emerald-950 font-bold' : 'bg-white border-slate-200 text-slate-700'
+                        }">
+                            <span><strong>${letters[oIdx]}.</strong> ${escapeAndFormatHTML(opt)}</span>
+                            ${isCorrect ? '<span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-md"><i class="fa-solid fa-check"></i> Kunci</span>' : ''}
+                        </div>
+                    `;
+                });
+
+                item.innerHTML = `
+                    <div class="font-bold text-slate-800 flex items-center justify-between">
+                        <span>Soal No. ${idx + 1}</span>
+                    </div>
+                    <div class="text-slate-900 leading-relaxed font-medium mb-2">${escapeAndFormatHTML(q.question)}</div>
+                    <div class="space-y-1.5">${optionsHTML}</div>
+                    ${q.explanation ? `<div class="text-xs text-indigo-900 bg-indigo-50/80 p-2.5 rounded-xl border border-indigo-100 italic mt-2"><strong class="font-bold">Pembahasan:</strong> ${escapeAndFormatHTML(q.explanation)}</div>` : ''}
+                `;
+
+                body.appendChild(item);
+            });
+
+            document.getElementById('previewModal').classList.remove('hidden');
+            document.getElementById('previewModal').classList.add('flex');
+        }
+
+        function closePreviewModal() {
+            document.getElementById('previewModal').classList.add('hidden');
+            document.getElementById('previewModal').classList.remove('flex');
+        }
+
+        function exportSinglePackage(pkgId) {
+            const pkg = examPackages.find(p => p.id === pkgId);
+            if (!pkg) return;
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(pkg, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `BankSoal_${pkg.title.replace(/[^a-zA-Z0-9]/g, '_')}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function exportAllPackages() {
+            if (examPackages.length === 0) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(examPackages, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `Semua_BankSoal_CBT_${Date.now()}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function importPackageFromFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const rawJson = cleanJsonText(evt.target.result);
+                    const parsed = JSON.parse(rawJson);
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(pkg => {
+                            if (pkg.title && Array.isArray(pkg.questions)) {
+                                pkg.id = 'pkg-' + Date.now() + Math.floor(Math.random()*1000);
+                                examPackages.unshift(pkg);
+                            }
+                        });
+                    } else if (parsed.title && Array.isArray(parsed.questions)) {
+                        parsed.id = 'pkg-' + Date.now();
+                        examPackages.unshift(parsed);
+                    } else {
+                        throw new Error("Format berkas JSON tidak sesuai.");
+                    }
+
+                    savePackages();
+                    renderExamSelectOptions();
+                    renderSavedPackagesList();
+                    alert('Bank soal dari berkas eksternal berhasil diimpor!');
+                } catch(err) {
+                    alert('Gagal memuat file JSON: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Reset input file agar dapat dipilih ulang
+        }
+
+        function deletePackage(pkgId) {
+            if (confirm('Apakah Anda yakin ingin menghapus paket soal ini?')) {
+                examPackages = examPackages.filter(p => p.id !== pkgId);
+                savePackages();
+                renderExamSelectOptions();
+                renderSavedPackagesList();
+            }
+        }
+
+        // ================= LOGIKA UTAMA UJIAN =================
+
+        function handleStartExam(e) {
+            e.preventDefault();
+            const name = document.getElementById('studentName').value.trim();
+            const id = document.getElementById('studentId').value.trim();
+            const selectedPkgId = document.getElementById('examSelect').value;
+
+            currentExam = examPackages.find(p => p.id === selectedPkgId);
+            if (!currentExam || !currentExam.questions.length) {
+                alert('Paket soal tidak ditemukan atau tidak memiliki pertanyaan.');
+                return;
+            }
+
+            currentStudent = { name, id };
+            studentAnswers = {};
+            doubtStatus = {};
+            currentIndex = 0;
+            remainingSeconds = (currentExam.duration || 30) * 60;
+
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-exam').classList.remove('hidden');
+            document.getElementById('screen-exam').classList.add('flex');
+
+            document.getElementById('examHeaderTitle').innerText = currentExam.title;
+            document.getElementById('examHeaderStudent').innerText = `Peserta: ${name} (${id})`;
+
+            startTimer();
+            renderQuestion();
+            renderQuestionGrid();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            updateTimerUI();
+
+            timerInterval = setInterval(() => {
+                remainingSeconds--;
+                updateTimerUI();
+
+                if (remainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    alert('Waktu Ujian Telah Habis! Jawaban Anda otomatis dikumpulkan.');
+                    finishExam();
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            const h = Math.floor(remainingSeconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((remainingSeconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (remainingSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timerDisplay').innerText = `${h}:${m}:${s}`;
+        }
+
+        function renderQuestion() {
+            const q = currentExam.questions[currentIndex];
+            const letters = ['A', 'B', 'C', 'D', 'E'];
+
+            document.getElementById('currentQuestionNumber').innerText = currentIndex + 1;
+            document.getElementById('questionText').innerHTML = escapeAndFormatHTML(q.question);
+            document.getElementById('doubtCheckbox').checked = !!doubtStatus[currentIndex];
+
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+
+            q.options.forEach((optText, optIdx) => {
+                const isSelected = studentAnswers[currentIndex] === optIdx;
+                const letter = letters[optIdx] || String.fromCharCode(65 + optIdx);
+
+                const div = document.createElement('div');
+                div.className = `flex items-center gap-3 p-3.5 sm:p-4 rounded-xl border-2 transition cursor-pointer select-none ${
+                    isSelected 
+                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-950 font-semibold shadow-xs' 
+                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                }`;
+
+                div.onclick = () => selectOption(optIdx);
+
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                        isSelected ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 border'
+                    }">
+                        ${letter}
+                    </div>
+                    <div class="text-xs sm:text-sm leading-relaxed">${escapeAndFormatHTML(optText)}</div>
+                `;
+
+                container.appendChild(div);
+            });
+
+            document.getElementById('btnPrev').disabled = (currentIndex === 0);
+            document.getElementById('btnPrev').classList.toggle('opacity-50', currentIndex === 0);
+
+            const isLast = (currentIndex === currentExam.questions.length - 1);
+            const btnNextText = document.getElementById('btnNextText');
+            const btnNextIcon = document.getElementById('btnNextIcon');
+            const btnNext = document.getElementById('btnNext');
+
+            if (isLast) {
+                btnNextText.innerText = 'Selesai & Kumpulkan';
+                btnNextIcon.className = 'fa-solid fa-flag-checkered';
+                btnNext.onclick = openFinishModal;
+            } else {
+                btnNextText.innerText = 'Selanjutnya';
+                btnNextIcon.className = 'fa-solid fa-chevron-right';
+                btnNext.onclick = () => navigateQuestion(1);
+            }
+
+            renderQuestionGrid();
+        }
+
+        function selectOption(optIdx) {
+            studentAnswers[currentIndex] = optIdx;
+            renderQuestion();
+        }
+
+        function toggleDoubtStatus() {
+            doubtStatus[currentIndex] = document.getElementById('doubtCheckbox').checked;
+            renderQuestionGrid();
+        }
+
+        function navigateQuestion(direction) {
+            const target = currentIndex + direction;
+            if (target >= 0 && target < currentExam.questions.length) {
+                currentIndex = target;
+                renderQuestion();
+            }
+        }
+
+        function jumpToQuestion(idx) {
+            currentIndex = idx;
+            renderQuestion();
+        }
+
+        function renderQuestionGrid() {
+            const grid = document.getElementById('questionGrid');
+            grid.innerHTML = '';
+
+            let answeredCount = 0;
+
+            currentExam.questions.forEach((_, idx) => {
+                const hasAnswer = (studentAnswers[idx] !== undefined);
+                const isDoubt = !!doubtStatus[idx];
+                const isCurrent = (idx === currentIndex);
+
+                if (hasAnswer) answeredCount++;
+
+                let bgClass = 'bg-slate-100 text-slate-700 border-slate-200';
+
+                if (isDoubt) {
+                    bgClass = 'bg-amber-400 text-amber-950 font-bold border-amber-500';
+                } else if (hasAnswer) {
+                    bgClass = 'bg-emerald-500 text-white font-bold border-emerald-600';
+                }
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.onclick = () => jumpToQuestion(idx);
+                btn.className = `h-10 rounded-xl text-xs font-bold border transition relative flex items-center justify-center ${bgClass} ${
+                    isCurrent ? 'ring-3 ring-indigo-500 ring-offset-1 scale-105 z-10 shadow-sm' : 'hover:opacity-90'
+                }`;
+
+                btn.innerText = idx + 1;
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('answeredBadge').innerText = `${answeredCount} / ${currentExam.questions.length} Terjawab`;
+        }
+
+        // ================= MODAL KONFIRMASI & REKAP HASIL =================
+
+        function openFinishModal() {
+            const total = currentExam.questions.length;
+            const answered = Object.keys(studentAnswers).length;
+            let doubt = 0;
+            Object.keys(doubtStatus).forEach(k => { if (doubtStatus[k]) doubt++; });
+            const unanswered = total - answered;
+
+            document.getElementById('modalAnsweredCount').innerText = `${answered} / ${total} Soal`;
+            document.getElementById('modalDoubtCount').innerText = `${doubt} Soal`;
+            document.getElementById('modalUnansweredCount').innerText = `${unanswered} Soal`;
+
+            const warningBox = document.getElementById('warningUnansweredText');
+            if (unanswered > 0 || doubt > 0) {
+                warningBox.classList.remove('hidden');
+            } else {
+                warningBox.classList.add('hidden');
+            }
+
+            const modal = document.getElementById('finishModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeFinishModal() {
+            const modal = document.getElementById('finishModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function finishExam() {
+            closeFinishModal();
+            clearInterval(timerInterval);
+
+            let correctCount = 0;
+            currentExam.questions.forEach((q, idx) => {
+                if (studentAnswers[idx] !== undefined && studentAnswers[idx] === q.answer) {
+                    correctCount++;
+                }
+            });
+
+            const total = currentExam.questions.length;
+            const wrongCount = total - correctCount;
+            const score = Math.round((correctCount / total) * 100);
+
+            document.getElementById('resStudentName').innerText = currentStudent.name || 'Peserta';
+            document.getElementById('resStudentId').innerText = currentStudent.id || '-';
+            document.getElementById('resExamTitle').innerText = currentExam.title;
+            document.getElementById('resTimestamp').innerText = new Date().toLocaleString('id-ID');
+
+            document.getElementById('resScore').innerText = score;
+            document.getElementById('resCorrect').innerText = `${correctCount} / ${total}`;
+            document.getElementById('resWrong').innerText = `${wrongCount} Soal`;
+
+            let feedback = '';
+            if (score >= 85) {
+                feedback = `Sangat Luar Biasa! Anda menguasai materi (${score}%) dengan sangat akurat. Pertahankan pemahaman Anda!`;
+            } else if (score >= 70) {
+                feedback = `Bagus! Hasil Anda cukup memuaskan (${score}%). Pelajari kembali soal-soal yang salah pada pembahasan di bawah.`;
+            } else {
+                feedback = `Perlu Ditingkatkan! Hasil nilai Anda (${score}%). Sebaiknya ulangi ujian dan tinjau pembahasan materi secara mendalam.`;
+            }
+            document.getElementById('feedbackText').innerText = feedback;
+
+            renderReviewSection();
+
+            document.getElementById('screen-exam').classList.add('hidden');
+            document.getElementById('screen-exam').classList.remove('flex');
+            document.getElementById('screen-result').classList.remove('hidden');
+            document.getElementById('screen-result').classList.add('flex');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderReviewSection() {
+            const container = document.getElementById('reviewContainer');
+            container.innerHTML = '';
+            const letters = ['A', 'B', 'C', 'D', 'E'];
+
+            currentExam.questions.forEach((q, idx) => {
+                const userAns = studentAnswers[idx];
+                const isCorrect = userAns === q.answer;
+
+                const item = document.createElement('div');
+                item.className = `p-4 rounded-2xl border ${isCorrect ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'}`;
+
+                let statusBadge = isCorrect 
+                    ? `<span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-lg"><i class="fa-solid fa-check mr-1"></i> Benar (+${Math.round(100/currentExam.questions.length)})</span>`
+                    : `<span class="text-xs bg-rose-100 text-rose-800 font-bold px-2.5 py-1 rounded-lg"><i class="fa-solid fa-xmark mr-1"></i> Salah / Kosong</span>`;
+
+                let userAnsText = userAns !== undefined ? `${letters[userAns]}. ${q.options[userAns]}` : '<em class="text-slate-400">Tidak Dijawab</em>';
+                let keyAnsText = `${letters[q.answer]}. ${q.options[q.answer]}`;
+
+                item.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <strong class="text-xs text-slate-700">Soal #${idx + 1}</strong>
+                        ${statusBadge}
+                    </div>
+                    <p class="text-xs sm:text-sm font-medium text-slate-800 mb-3">${escapeAndFormatHTML(q.question)}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-2">
+                        <div class="p-2.5 rounded-xl bg-white border">
+                            <span class="text-slate-400 block font-bold text-[10px]">Jawaban Anda:</span>
+                            <span class="${isCorrect ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}">${escapeAndFormatHTML(userAnsText)}</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-white border">
+                            <span class="text-slate-400 block font-bold text-[10px]">Kunci Jawaban:</span>
+                            <span class="text-indigo-700 font-bold">${escapeAndFormatHTML(keyAnsText)}</span>
+                        </div>
+                    </div>
+                    ${q.explanation ? `<div class="text-xs text-slate-600 bg-white/90 p-2.5 rounded-xl border border-slate-200 italic mt-2"><strong class="text-indigo-900">Pembahasan:</strong> ${escapeAndFormatHTML(q.explanation)}</div>` : ''}
+                `;
+
+                container.appendChild(item);
+            });
+        }
+
+        function toggleReviewSection() {
+            const container = document.getElementById('reviewContainer');
+            const icon = document.getElementById('reviewChevron');
+            container.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        function restartCurrentExam() {
+            studentAnswers = {};
+            doubtStatus = {};
+            currentIndex = 0;
+            remainingSeconds = (currentExam.duration || 30) * 60;
+
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('flex');
+            document.getElementById('screen-exam').classList.remove('hidden');
+            document.getElementById('screen-exam').classList.add('flex');
+
+            startTimer();
+            renderQuestion();
+            renderQuestionGrid();
+        }
+
+        function returnToHome() {
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('flex');
+            document.getElementById('screen-login').classList.remove('hidden');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(()=>{});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        // ================= INTEGRASI LANGSUNG GEMINI AI & FILE RUJUKAN =================
+
+        function handleReferenceFileUpload(e) {
+            const file = e.target.files[0];
+            const statusText = document.getElementById('fileStatusText');
+            attachedFileBase64 = null;
+            attachedFileType = null;
+
+            if (!file) {
+                statusText.innerText = "Belum ada file diunggah.";
+                return;
+            }
+
+            if (file.size > 20 * 1024 * 1024) {
+                alert("Ukuran file terlalu besar (maksimal 20 MB).");
+                statusText.innerText = "Gagal: Ukuran file melebihi 20 MB.";
+                return;
+            }
+
+            statusText.innerText = `Membaca berkas: ${file.name} (${Math.round(file.size/1024)} KB)...`;
+
+            const reader = new FileReader();
+
+            const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+            const isImage = file.type.startsWith('image/');
+
+            if (isImage || isPdf) {
+                reader.onload = function(evt) {
+                    const base64Data = evt.target.result.split(',')[1];
+                    attachedFileBase64 = base64Data;
+                    attachedFileType = isPdf ? 'application/pdf' : file.type;
+                    statusText.innerText = `✓ File ${isPdf ? 'PDF' : 'gambar'} terlampir: ${file.name}`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                reader.onload = function(evt) {
+                    const textContent = evt.target.result;
+                    const textInput = document.getElementById('aiTextContextInput');
+                    textInput.value = (textInput.value ? textInput.value + "\n\n" : "") + `--- MATERI DARI FILE ${file.name} ---\n` + textContent;
+                    statusText.innerText = `✓ Teks dari file ${file.name} telah disisipkan ke kotak materi.`;
+                };
+                reader.readAsText(file);
+            }
+            e.target.value = ''; // Reset file input
+        }
+
+        async function generateExamWithGemini() {
+            const userApiKey = document.getElementById('geminiApiKeyInput')?.value?.trim() || '';
+            if (userApiKey) {
+                localStorage.setItem('cbt_gemini_api_key', userApiKey);
+            }
+
+            const topic = document.getElementById('aiTopicInput').value.trim() || 'Pengetahuan Umum';
+            const contextText = document.getElementById('aiTextContextInput').value.trim();
+            const count = document.getElementById('aiQuestionCount').value;
+            const btn = document.getElementById('btnGenerateGemini');
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Gemini Sedang Menyusun Soal...`;
+
+            try {
+                const systemPrompt = `Anda adalah pembuat soal ujian pilihan ganda (A-E) tingkat profesional. Tugas Anda adalah membuat ${count} soal pilihan ganda berkualitas tinggi berdasarkan materi/rujukan yang diberikan.
+
+Wajib mengembalikan output JSON MURNI sesuai schema berikut tanpa tambahan teks markdown lain:
+[
+  {
+    "question": "Isi pertanyaan di sini...",
+    "options": ["Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E"],
+    "answer": 1,
+    "explanation": "Penjelasan ringkas mengapa jawaban tersebut benar."
+  }
+]
+Catatan: 'answer' harus berupa angka indeks (0 untuk A, 1 untuk B, 2 untuk C, 3 untuk D, 4 untuk E).`;
+
+                const userPromptText = `Topik/Judul Ujian: ${topic}\n\nRujukan Materi/Kisi-Kisi Tambahan:\n${contextText || "Gunakan pengetahuan umum sesuai topik."}\n\nBuatkan ${count} soal pilihan ganda lengkap dengan 5 pilihan jawaban (A-E) dan kunci jawabannya.`;
+
+                const parts = [{ text: userPromptText }];
+
+                if (attachedFileBase64 && attachedFileType) {
+                    parts.push({
+                        inlineData: {
+                            mimeType: attachedFileType,
+                            data: attachedFileBase64
+                        }
+                    });
+                }
+
+                const payload = {
+                    contents: [{ parts: parts }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json"
+                    }
+                };
+
+                // Daftar model yang dicoba secara otomatis (fallback) untuk mencegah Error 404
+                const modelsToTry = [
+                    'gemini-2.5-flash',
+                    'gemini-1.5-flash',
+                    'gemini-2.0-flash',
+                    'gemini-3-flash-preview'
+                ];
+
+                let response = null;
+                let lastError = null;
+
+                for (const modelName of modelsToTry) {
+                    try {
+                        const apiKey = userApiKey || "";
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+                        const res = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (res.ok) {
+                            response = res;
+                            break;
+                        } else {
+                            lastError = `Model ${modelName}: HTTP ${res.status}`;
+                        }
+                    } catch (err) {
+                        lastError = err.message;
+                    }
+                }
+
+                if (!response) {
+                    throw new Error(`Semua endpoint model Gemini menolak permintaan (${lastError || '404'}).\n\nTips: Pastikan Anda telah mengisikan API Key gratis Anda pada kolom 'Gemini API Key'.`);
+                }
+
+                const result = await response.json();
+                let jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (!jsonText) {
+                    throw new Error('Gemini tidak mengembalikan respons teks.');
+                }
+
+                jsonText = cleanJsonText(jsonText);
+
+                document.getElementById('importJsonArea').value = jsonText;
+                document.getElementById('importExamTitle').value = topic;
+
+                saveImportedPackage();
+
+            } catch (err) {
+                alert('Gagal Generate Soal via Gemini:\n' + err.message + '\n\nAtau gunakan tab "Tempel JSON Manual" jika ingin memicu soal via obrolan Gemini.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-bolt text-amber-300"></i> Generate Soal Otomatis`;
+            }
+        }
+
+        function copyGeminiPrompt() {
+            const prompt = `Tolong buatkan [10] soal pilihan ganda tentang [Tuliskan Topik / Mata Pelajaran Di Sini] lengkap dengan opsi A-E dan kunci jawaban dalam format JSON murni tanpa penjelasan awalan/akhiran.
+
+Gunakan format JSON persis seperti ini:
+[
+  {
+    "question": "Isi pertanyaan di sini...",
+    "options": ["Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E"],
+    "answer": 0,
+    "explanation": "Penjelasan singkat jawaban benar"
+  }
+]
+
+Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk C, 3 untuk D, 4 untuk E).`;
+
+            navigator.clipboard.writeText(prompt).then(() => {
+                alert('Prompt Gemini berhasil disalin ke clipboard!');
+            }).catch(() => {
+                alert('Gagal menyalin otomatis. Silakan copy secara manual.');
+            });
+        }
+
+        function parseGeminiAnswer(rawAnswer) {
+            if (typeof rawAnswer === 'number') return rawAnswer;
+            if (typeof rawAnswer === 'string') {
+                const clean = rawAnswer.trim().toUpperCase();
+                const map = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4 };
+                if (map[clean] !== undefined) return map[clean];
+                const parsedInt = parseInt(clean, 10);
+                if (!isNaN(parsedInt)) return parsedInt;
+            }
+            return 0;
+        }
+
+        function saveImportedPackage() {
+            const title = document.getElementById('importExamTitle').value.trim() || 'Paket Soal Baru Gemini';
+            const duration = parseInt(document.getElementById('importExamDuration').value, 10) || 30;
+            const rawJsonText = document.getElementById('importJsonArea').value;
+            const jsonText = cleanJsonText(rawJsonText);
+
+            if (!jsonText) {
+                alert('Silakan tempel atau generate teks JSON soal terlebih dahulu.');
+                return;
+            }
+
+            try {
+                const rawParsed = JSON.parse(jsonText);
+                if (!Array.isArray(rawParsed) || rawParsed.length === 0) {
+                    throw new Error('Data JSON harus berupa list/array dari pertanyaan.');
+                }
+
+                const normalizedQuestions = rawParsed.map((item, idx) => {
+                    if (!item.question || !Array.isArray(item.options)) {
+                        throw new Error(`Format soal nomor ${idx + 1} tidak valid (harus ada "question" & "options").`);
+                    }
+
+                    return {
+                        question: item.question,
+                        options: item.options,
+                        answer: parseGeminiAnswer(item.answer),
+                        explanation: item.explanation || ''
+                    };
+                });
+
+                const newPackage = {
+                    id: 'pkg-' + Date.now(),
+                    title: title,
+                    duration: duration,
+                    questions: normalizedQuestions
+                };
+
+                examPackages.unshift(newPackage);
+                savePackages();
+                renderExamSelectOptions();
+
+                document.getElementById('importExamTitle').value = '';
+                document.getElementById('importJsonArea').value = '';
+
+                alert(`Berhasil! Paket soal "${title}" berisi ${normalizedQuestions.length} pertanyaan siap digunakan.`);
+                switchImportTab('manage');
+            } catch(err) {
+                alert('Gagal Mengimpor JSON: ' + err.message);
+            }
+        }
+
+        function escapeAndFormatHTML(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/\n/g, '<br>');
+        }
+    </script>
+</body>
+</html>
