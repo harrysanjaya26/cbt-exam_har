@@ -9,6 +9,9 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+      body {
+        font-family: 'Montserrat', sans-serif !important;
+      }
         .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -31,8 +34,8 @@
                 <div class="inline-flex bg-white/10 backdrop-blur-md p-4 rounded-2xl mb-3 border border-white/20 shadow-inner">
                     <i class="fa-solid fa-laptop-code text-3xl text-amber-300"></i>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">CBT AI Examination</h1>
-                <p class="text-indigo-200 text-xs sm:text-sm mt-1">Sistem Ujian Online Interaktif Berbasis Web & AI Integrasi</p>
+                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">🖥️ CBT by Harr ✍️</h1>
+                <p class="text-indigo-200 text-xs sm:text-sm mt-1">Web Ujian CBT Interaktif dan Terintegrasi AI</p>
 
                 <!-- Tombol Impor Bank Soal / Gemini & Kelola -->
                 <button onclick="openImporterModal('manage')" class="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white text-xs px-3.5 py-2 rounded-xl border border-white/20 backdrop-blur-xs transition flex items-center gap-1.5 shadow-sm font-semibold">
@@ -60,7 +63,7 @@
 
                 <!-- Pilihan Paket Ujian (Layout Rapi & Responsif) -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Paket Ujian</label>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Soal</label>
                     <select id="examSelect" class="w-full p-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium bg-slate-50 truncate mb-2">
                         <!-- Diisi otomatis lewat JavaScript -->
                     </select>
@@ -144,14 +147,22 @@
                     </label>
                 </div>
 
-                <!-- Teks Pertanyaan -->
+                <!-- Teks Pertanyaan & Gambar -->
                 <div class="p-5 sm:p-6 flex-1 custom-scroll overflow-y-auto">
-                    <div id="questionText" class="text-sm sm:text-base text-slate-800 leading-relaxed font-medium mb-6">
+                    <div id="questionText" class="text-sm sm:text-base text-slate-800 leading-relaxed font-medium mb-3">
                         <!-- Teks soal diisi JS -->
                     </div>
 
+                    <!-- Container Gambar Soal (Dukungan Gambar Rapi) -->
+                    <div id="questionImageContainer" class="hidden my-4 text-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                        <img id="questionImage" src="" alt="Gambar Soal" class="max-h-80 mx-auto rounded-xl object-contain shadow-xs cursor-pointer hover:opacity-95 transition" onclick="zoomImage(this.src)">
+                        <p class="text-[11px] text-slate-400 mt-1.5 flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i> Klik gambar untuk memperbesar
+                        </p>
+                    </div>
+
                     <!-- Container Opsi Jawaban -->
-                    <div id="optionsContainer" class="space-y-3">
+                    <div id="optionsContainer" class="space-y-3 mt-4">
                         <!-- Diisi Opsi JS -->
                     </div>
                 </div>
@@ -401,7 +412,7 @@
                             <i class="fa-solid fa-file-arrow-up text-indigo-600"></i> File Rujukan / Materi Pembelajaran (Custom Question Context)
                         </h4>
 
-                        <!-- Input API Key Gemini dengan Panduan Ambil Key & Default Key -->
+                        <!-- Input API Key Gemini -->
                         <div class="bg-indigo-50/80 border border-indigo-200 p-3 sm:p-4 rounded-2xl space-y-2.5">
                             <label class="block text-[11px] font-bold text-indigo-950">
                                 <i class="fa-solid fa-key text-amber-500 mr-1"></i> Gemini API Key (Wajib jika di-deploy / dibuka di luar editor):
@@ -504,10 +515,11 @@
                         <label class="block text-xs font-bold text-slate-700 mb-1">Tempel (Paste) Hasil JSON Gemini Di Sini</label>
                         <textarea id="importJsonArea" rows="7" placeholder='[
   {
-    "question": "Apa fungsi utama mitokondria pada sel?",
-    "options": ["Sintesis protein", "Respirasi dan penghasil energi", "Pencernaan sel", "Penyimpanan air", "Pembelahan sel"],
-    "answer": 1,
-    "explanation": "Mitokondria berfungsi sebagai organel penghasil energi (ATP) melalui proses respirasi sel."
+    "question": "Seorang laki-laki berusia 45 tahun ditemukan memiliki nodul tiroid...",
+    "image": "https://i.ibb.co/usg-example.jpg",
+    "options": ["Benign (<1%)", "Very Low Suspicion (<3%)", "Low Suspicion (5-10%)", "Intermediate Suspicion (10-20%)", "High Suspicion (>70-90%)"],
+    "answer": 3,
+    "explanation": "Pemeriksaan USG menunjukkan nodul padat hipoekoik dengan margin tidak teratur..."
   }
 ]' class="w-full p-3 font-mono text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50"></textarea>
                     </div>
@@ -564,6 +576,14 @@
         </div>
     </div>
 
+    <!-- ================= 7. MODAL LIGHTBOX / ZOOM GAMBAR FULLSCREEN ================= -->
+    <div id="imageZoomModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden items-center justify-center z-50 p-4" onclick="closeZoomImage()">
+        <button class="absolute top-4 right-4 text-white text-3xl hover:text-rose-400 transition p-2">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <img id="zoomedImageSrc" src="" alt="Zoomed Image" class="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl border border-white/10" onclick="event.stopPropagation()">
+    </div>
+
     <!-- Footer Hak Cipta -->
     <footer class="text-center py-3 text-[11px] text-slate-400 no-print">
         CBT Examination System &copy; 2026 - Didukung oleh Integrasi Gemini AI
@@ -574,36 +594,39 @@
         const STORAGE_KEY = 'cbt_gemini_app_data_v3';
         const DEFAULT_API_KEY_PRESET = 'AQ.Ab8RN6IuZ_eGuhXG_hYka1gNUAj_08bXaC2fGkfEdmyausZUkg';
 
-        // Bank Soal Default (Demo)
+        // Bank Soal Default (Demo - Sudah termasuk Contoh Soal Bergambar Medis)
         const DEFAULT_PACKAGES = [
             {
                 id: 'pkg-demo-1',
-                title: 'Simulasi Umum CBT (Sains & Umum)',
-                duration: 10,
+                title: 'Simulasi Umum CBT (Sains & Medis)',
+                duration: 15,
                 questions: [
                     {
+                        question: "Seorang laki-laki berusia 45 tahun ditemukan memiliki nodul tiroid secara tidak sengaja saat pemeriksaan kesehatan rutin. Pasien tidak memiliki keluhan sistemik. Pemeriksaan ultrasonografi (USG) menunjukkan nodul solid hipoekoik dengan margin yang tidak teratur dan ditemukan adanya mikrokalsifikasi di dalamnya. Berdasarkan temuan USG tersebut, bagaimana tingkat kecurigaan keganasannya?",
+                        image: "", // Bisa diisi URL gambar USG jika ada
+                        options: [
+                            "Benign (<1%)",
+                            "Very Low Suspicion (<3%)",
+                            "Low Suspicion (5-10%)",
+                            "Intermediate Suspicion (10-20%)",
+                            "High Suspicion (>70-90%)"
+                        ],
+                        answer: 4,
+                        explanation: "Berdasarkan pedoman ATA (American Thyroid Association) / TIRADS, nodul tiroid padat (solid) hipoekoik dengan salah satu fitur risiko tinggi seperti mikrokalsifikasi, margin tidak teratur, atau lebih tinggi dari lebar (taller-than-wide) dikategorikan sebagai High Suspicion dengan risiko keganasan 70-90%."
+                    },
+                    {
                         question: "Manakah planet dalam tata surya kita yang paling dekat dengan Matahari?",
+                        image: "",
                         options: ["Venus", "Bumi", "Merkurius", "Mars", "Jupiter"],
                         answer: 2,
                         explanation: "Merkurius adalah planet terdekat dari Matahari dengan jarak rata-rata sekitar 57,9 juta km."
                     },
                     {
                         question: "Proses pembuatan makanan pada tumbuhan hijau dengan bantuan cahaya matahari dinamakan...",
+                        image: "",
                         options: ["Respirasi", "Fotosintesis", "Transpirasi", "Osmosis", "Fermentasi"],
                         answer: 1,
                         explanation: "Fotosintesis merubah H2O dan CO2 menjadi Glukosa dan O2 menggunakan energi cahaya."
-                    },
-                    {
-                        question: "Unsur kimia dengan lambang 'O' dalam tabel periodik memiliki nomor atom 8, yaitu...",
-                        options: ["Emas (Aurum)", "Oksigen", "Perak (Argentum)", "Osmium", "Hidrogen"],
-                        answer: 1,
-                        explanation: "O merupakan simbol kimia untuk Oksigen."
-                    },
-                    {
-                        question: "Berapakah hasil dari akar kuadrat dari 144 dikalikan 2?",
-                        options: ["12", "18", "24", "36", "48"],
-                        answer: 2,
-                        explanation: "Akar 144 = 12. Kemudian 12 x 2 = 24."
                     }
                 ]
             }
@@ -634,6 +657,21 @@
                 }
             });
         };
+
+        function zoomImage(src) {
+            if (!src) return;
+            const modal = document.getElementById('imageZoomModal');
+            const img = document.getElementById('zoomedImageSrc');
+            img.src = src;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeZoomImage() {
+            const modal = document.getElementById('imageZoomModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
 
         function loadSavedApiKey() {
             const savedKey = localStorage.getItem('cbt_gemini_api_key') || DEFAULT_API_KEY_PRESET;
@@ -845,11 +883,21 @@
                     `;
                 });
 
+                let imagePreviewHTML = '';
+                if (q.image) {
+                    imagePreviewHTML = `
+                        <div class="my-2 text-center bg-white p-2 rounded-xl border border-slate-200">
+                            <img src="${q.image}" class="max-h-48 mx-auto rounded-lg object-contain cursor-pointer hover:opacity-90" onclick="zoomImage(this.src)">
+                        </div>
+                    `;
+                }
+
                 item.innerHTML = `
                     <div class="font-bold text-slate-800 flex items-center justify-between">
                         <span>Soal No. ${idx + 1}</span>
                     </div>
                     <div class="text-slate-900 leading-relaxed font-medium mb-2">${escapeAndFormatHTML(q.question)}</div>
+                    ${imagePreviewHTML}
                     <div class="space-y-1.5">${optionsHTML}</div>
                     ${q.explanation ? `<div class="text-xs text-indigo-900 bg-indigo-50/80 p-2.5 rounded-xl border border-indigo-100 italic mt-2"><strong class="font-bold">Pembahasan:</strong> ${escapeAndFormatHTML(q.explanation)}</div>` : ''}
                 `;
@@ -922,7 +970,7 @@
                 }
             };
             reader.readAsText(file);
-            e.target.value = ''; // Reset input file agar dapat dipilih ulang
+            e.target.value = ''; // Reset input file
         }
 
         function deletePackage(pkgId) {
@@ -996,6 +1044,22 @@
             document.getElementById('currentQuestionNumber').innerText = currentIndex + 1;
             document.getElementById('questionText').innerHTML = escapeAndFormatHTML(q.question);
             document.getElementById('doubtCheckbox').checked = !!doubtStatus[currentIndex];
+
+            // Penanganan Gambar Soal (Rapi & Responsif)
+            const imgContainer = document.getElementById('questionImageContainer');
+            const imgEl = document.getElementById('questionImage');
+
+            if (q.image && q.image.trim() !== "") {
+                imgEl.src = q.image;
+                imgContainer.classList.remove('hidden');
+                // Sembunyikan jika gambar gagal dimuat (broken link)
+                imgEl.onerror = function() {
+                    imgContainer.classList.add('hidden');
+                };
+            } else {
+                imgContainer.classList.add('hidden');
+                imgEl.src = "";
+            }
 
             const container = document.getElementById('optionsContainer');
             container.innerHTML = '';
@@ -1197,12 +1261,22 @@
                 let userAnsText = userAns !== undefined ? `${letters[userAns]}. ${q.options[userAns]}` : '<em class="text-slate-400">Tidak Dijawab</em>';
                 let keyAnsText = `${letters[q.answer]}. ${q.options[q.answer]}`;
 
+                let reviewImageHTML = '';
+                if (q.image && q.image.trim() !== '') {
+                    reviewImageHTML = `
+                        <div class="my-2 bg-white p-2 rounded-xl border border-slate-200 text-center">
+                            <img src="${q.image}" class="max-h-48 mx-auto rounded-lg object-contain cursor-pointer hover:opacity-90" onclick="zoomImage(this.src)">
+                        </div>
+                    `;
+                }
+
                 item.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
                         <strong class="text-xs text-slate-700">Soal #${idx + 1}</strong>
                         ${statusBadge}
                     </div>
-                    <p class="text-xs sm:text-sm font-medium text-slate-800 mb-3">${escapeAndFormatHTML(q.question)}</p>
+                    <p class="text-xs sm:text-sm font-medium text-slate-800 mb-2">${escapeAndFormatHTML(q.question)}</p>
+                    ${reviewImageHTML}
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-2">
                         <div class="p-2.5 rounded-xl bg-white border">
                             <span class="text-slate-400 block font-bold text-[10px]">Jawaban Anda:</span>
@@ -1320,10 +1394,11 @@
             try {
                 const systemPrompt = `Anda adalah pembuat soal ujian pilihan ganda (A-E) tingkat profesional. Tugas Anda adalah membuat ${count} soal pilihan ganda berkualitas tinggi berdasarkan materi/rujukan yang diberikan.
 
-Wajib mengembalikan output JSON MURNI sesuai schema berikut tanpa tambahan teks markdown lain:
+Sertakan field "image" (string kosong "" atau URL gambar jika ada referensi gambar spesifik). Wajib mengembalikan output JSON MURNI sesuai schema berikut tanpa tambahan teks markdown lain:
 [
   {
     "question": "Isi pertanyaan di sini...",
+    "image": "",
     "options": ["Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E"],
     "answer": 1,
     "explanation": "Penjelasan ringkas mengapa jawaban tersebut benar."
@@ -1352,7 +1427,6 @@ Catatan: 'answer' harus berupa angka indeks (0 untuk A, 1 untuk B, 2 untuk C, 3 
                     }
                 };
 
-                // Daftar model yang dicoba secara otomatis (fallback) untuk mencegah Error 404
                 const modelsToTry = [
                     'gemini-2.5-flash',
                     'gemini-1.5-flash',
@@ -1418,6 +1492,7 @@ Gunakan format JSON persis seperti ini:
 [
   {
     "question": "Isi pertanyaan di sini...",
+    "image": "URL_gambar_jika_ada_atau_kosongkan",
     "options": ["Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E"],
     "answer": 0,
     "explanation": "Penjelasan singkat jawaban benar"
@@ -1469,6 +1544,7 @@ Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk 
 
                     return {
                         question: item.question,
+                        image: item.image || '',
                         options: item.options,
                         answer: parseGeminiAnswer(item.answer),
                         explanation: item.explanation || ''
@@ -1506,5 +1582,9 @@ Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk 
                 .replace(/\n/g, '<br>');
         }
     </script>
+  <!-- Google Font: Montserrat -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </body>
 </html>
