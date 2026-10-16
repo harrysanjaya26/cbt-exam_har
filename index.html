@@ -3,1490 +3,1511 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi CBT Online - Integrasi Gemini AI & Material Importer</title>
+    <title>CBT by Harr - Web Ujian Interaktif & Bank Soal AI</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for Math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    
+    <script>
+        function initKaTeX() {
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        }
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="initKaTeX();"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-      body {
-        font-family: 'Montserrat', sans-serif !important;
-      }
-        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        * { font-family: 'Montserrat', sans-serif !important; }
+        .font-mono { font-family: monospace, monospace !important; }
+        body { font-family: 'Montserrat', sans-serif !important; }
         
+        .glass-header {
+            background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%);
+        }
+        .result-header-bg {
+            background: linear-gradient(135deg, #059669 0%, #047857 40%, #1e1b4b 100%);
+        }
+        .modal-header-bg {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
         @media print {
             .no-print { display: none !important; }
-            body { background: white !important; font-size: 12px; }
-            .print-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+            body { background: white !important; }
         }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 font-sans antialiased select-none flex flex-col justify-between">
+<body class="bg-slate-100 min-h-screen text-slate-800 antialiased flex flex-col custom-scrollbar">
 
-    <!-- ================= 1. HALAMAN UTAMA / BERANDA LOGIN ================= -->
-    <div id="screen-login" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-xl w-full max-w-xl overflow-hidden border border-slate-200">
-            <!-- Banner Header -->
-            <div class="bg-gradient-to-r from-indigo-700 via-indigo-800 to-blue-900 text-white p-6 sm:p-8 text-center relative">
-                <div class="inline-flex bg-white/10 backdrop-blur-md p-4 rounded-2xl mb-3 border border-white/20 shadow-inner">
-                    <i class="fa-solid fa-laptop-code text-3xl text-amber-300"></i>
-                </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">🖥️ CBT by Harr ✍️</h1>
-                <p class="text-indigo-200 text-xs sm:text-sm mt-1">Web Ujian CBT Interaktif dan Terintegrasi AI</p>
-
-                <!-- Tombol Impor Bank Soal / Gemini & Kelola -->
-                <button onclick="openImporterModal('manage')" class="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white text-xs px-3.5 py-2 rounded-xl border border-white/20 backdrop-blur-xs transition flex items-center gap-1.5 shadow-sm font-semibold">
-                    <i class="fa-solid fa-folder-open text-amber-300"></i> Kelola Bank Soal
-                </button>
-            </div>
-
-            <!-- Form Data Diri Peserta -->
-            <form onsubmit="handleStartExam(event)" class="p-6 sm:p-8 space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-user absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
-                        <input type="text" id="studentName" placeholder="Masukkan nama..." required class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">NIM (Opsional)</label>
-                    <div class="relative">
-                        <i class="fa-solid fa-id-card absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
-                        <input type="text" id="studentId" placeholder="Contoh: 202601001 (Opsional)" class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                </div>
-
-                <!-- Pilihan Paket Ujian (Layout Rapi & Responsif) -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Soal</label>
-                    <select id="examSelect" class="w-full p-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium bg-slate-50 truncate mb-2">
-                        <!-- Diisi otomatis lewat JavaScript -->
-                    </select>
-                    
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" onclick="openImporterModal('manage')" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs">
-                            <i class="fa-solid fa-folder-open text-indigo-600"></i> Kelola Bank Soal
-                        </button>
-                        <button type="button" onclick="openImporterModal('auto')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
-                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Buat Soal Baru (AI)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Petunjuk singkat -->
-                <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-2xl text-xs text-amber-900 space-y-1">
-                    <p class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-amber-600"></i> Petunjuk Pelaksanaan:</p>
-                    <ul class="list-disc list-inside space-y-0.5 text-amber-800/90 pl-1">
-                        <li>Timer akan mulai berjalan mundur setelah menekan "Mulai Ujian".</li>
-                        <li>Gunakan nomor navigasi di sebelah kanan untuk melompat antar soal.</li>
-                        <li>Centang "Ragu-Ragu" jika belum yakin dengan pilihan Anda.</li>
-                    </ul>
-                </div>
-
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-play"></i> Mulai Kerjakan Ujian
-                </button>
-            </form>
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-100px] opacity-0 pointer-events-none no-print">
+        <div id="toastContent" class="bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
+            <span id="toastIcon">
+                <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+            <span id="toastMessage" class="text-xs font-semibold">Notifikasi</span>
         </div>
     </div>
 
-    <!-- ================= 2. RUANG UJIAN CBT ================= -->
-    <div id="screen-exam" class="min-h-screen hidden flex-col">
-        <!-- Header Ruang Ujian -->
-        <header class="bg-indigo-900 text-white px-4 py-3 shadow-md flex justify-between items-center sticky top-0 z-40">
-            <div class="flex items-center gap-3">
-                <div class="bg-indigo-800 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider hidden sm:block">
-                    CBT ONLINE
+    <!-- MAIN APP CONTAINER -->
+    <div class="flex-1 flex flex-col">
+
+        <!-- SCREEN 1: LOGIN -->
+        <section id="screenLogin" class="flex-1 flex items-center justify-center p-4">
+            <div class="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 transition-all duration-300">
+                <div class="glass-header p-8 text-center text-white relative">
+                    <div class="absolute top-4 right-4">
+                        <button onclick="openBankModal('list')" class="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full border border-white/20 transition flex items-center gap-1.5 font-medium">
+                            <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                            Bank Soal
+                        </button>
+                    </div>
+                    <div class="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/20 shadow-inner">
+                        <svg class="w-8 h-8 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    </div>
+                    <h1 class="text-2xl font-extrabold tracking-tight mb-1">CBT by Harr</h1>
+                    <p class="text-xs text-emerald-100 font-light">Web Ujian CBT Interaktif & Generator AI</p>
                 </div>
-                <div>
-                    <h2 id="examHeaderTitle" class="font-bold text-sm sm:text-base leading-tight">Ujian Simulasi</h2>
-                    <p id="examHeaderStudent" class="text-indigo-200 text-xs">Peserta: -</p>
+
+                <div class="p-8 space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Nama Lengkap</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            </span>
+                            <input type="text" id="loginNama" placeholder="Masukkan nama..." 
+                                class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 outline-none text-xs font-semibold transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">NIM <span class="text-slate-400 font-normal lowercase">(opsional)</span></label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 012-2h2a2 2 0 012 2v1m-6 0h6"/></svg>
+                            </span>
+                            <input type="text" id="loginNim" placeholder="Contoh: 202601001" 
+                                class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:border-brand-600 focus:ring-2 focus:ring-brand-100 outline-none text-xs font-semibold transition">
+                        </div>
+                    </div>
+
+                    <button onclick="handleLogin()" class="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-200 transition flex items-center justify-center gap-2 tracking-wider">
+                        <span>LOGIN</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </button>
+
+                    <div class="pt-2 text-center">
+                        <p class="text-[11px] text-slate-400">Masuk untuk mengakses portal ujian dan paket soal yang tersedia.</p>
+                    </div>
                 </div>
             </div>
+        </section>
 
-            <div class="flex items-center gap-3">
-                <!-- Countdown Timer -->
-                <div class="bg-indigo-950 border border-indigo-700/60 px-3.5 py-1.5 rounded-xl flex items-center gap-2 shadow-inner">
-                    <i class="fa-regular fa-clock text-amber-400 animate-pulse"></i>
-                    <span id="timerDisplay" class="font-mono font-bold text-sm sm:text-base tracking-wider text-amber-300">00:00:00</span>
+        <!-- SCREEN 2: DASHBOARD -->
+        <section id="screenDashboard" class="hidden flex-1 flex flex-col">
+            <header class="glass-header text-white shadow-lg sticky top-0 z-30">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/20 shadow-inner">
+                            <svg class="w-6 h-6 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        </div>
+                        <div>
+                            <h1 class="font-extrabold text-lg leading-tight">CBT by Harr</h1>
+                            <p class="text-xs text-emerald-200">Portal Seleksi & Ujian Online</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                        <div class="flex items-center gap-2.5 bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/10 text-xs">
+                            <div class="w-6 h-6 bg-emerald-500/30 rounded-full flex items-center justify-center text-emerald-200">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            </div>
+                            <div>
+                                <span class="font-semibold block" id="dashboardUserNama">Peserta</span>
+                                <span class="text-emerald-200 text-[10px]" id="dashboardUserNim">NIM: -</span>
+                            </div>
+                        </div>
+                        <button onclick="handleLogout()" title="Keluar / Ganti Akun" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-100 border border-rose-300/30 px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-slate-800">Daftar Paket Ujian</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Pilih paket ujian di bawah ini untuk memulai pengerjaan.</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        <button onclick="openBankModal('list')" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 transition flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                            Kelola Bank Soal
+                        </button>
+                        <button onclick="openBankModal('ai')" class="flex-1 sm:flex-none px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-100 transition flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            Buat Soal Baru (AI)
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Tombol Fullscreen -->
-                <button onclick="toggleFullscreen()" title="Layar Penuh" class="bg-indigo-800 hover:bg-indigo-700 text-white p-2 rounded-xl text-xs transition no-print">
-                    <i class="fa-solid fa-expand"></i>
-                </button>
+                <div id="quizGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+            </main>
 
-                <!-- Tombol Selesai Ujian -->
-                <button type="button" onclick="openFinishModal()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
-                    <i class="fa-solid fa-flag-checkered"></i> <span>Selesai</span>
-                </button>
-            </div>
-        </header>
+            <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 font-medium">
+                CBT Examination System © 2026 - Didukung oleh Integrasi Gemini AI
+            </footer>
+        </section>
 
-        <!-- Area Konten Soal & Navigasi -->
-        <main class="flex-1 p-3 sm:p-5 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-5">
-            
-            <!-- Kolom Soal (8/12) -->
-            <div class="lg:col-span-8 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[450px]">
+        <!-- SCREEN 3: CBT EXAM -->
+        <section id="screenCbt" class="hidden flex-1 flex flex-col min-h-screen">
+            <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+                <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="bg-brand-900 text-emerald-300 text-[10px] font-extrabold px-2.5 py-1 rounded-md tracking-wider hidden sm:inline-block border border-brand-700">CBT ONLINE</span>
+                        <div>
+                            <h1 id="examTitle" class="font-bold text-sm sm:text-base leading-tight">Nama Paket Ujian</h1>
+                            <p id="examParticipant" class="text-xs text-emerald-300">Peserta: -</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="bg-slate-950 text-amber-400 border border-amber-400/30 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-mono font-bold flex items-center gap-2">
+                            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span id="examTimer">00:00:00</span>
+                        </div>
+                        <button onclick="openConfirmModal()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-1.5">
+                            Selesai Ujian
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="lg:col-span-3 flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                        <span id="questionBadge" class="bg-brand-50 text-brand-800 text-xs font-extrabold px-3 py-1.5 rounded-lg border border-brand-200">Soal No. 1</span>
+                        <label class="flex items-center gap-2 cursor-pointer bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200 transition select-none">
+                            <input type="checkbox" id="chkDoubt" onchange="toggleDoubt()" class="rounded text-amber-600 focus:ring-amber-400 w-4 h-4">
+                            📌 Ragu-Ragu
+                        </label>
+                    </div>
+
+                    <div class="p-6 flex-1 flex flex-col justify-between">
+                        <div>
+                            <div id="questionText" class="text-slate-800 font-medium text-base leading-relaxed mb-6"></div>
+                            <div id="questionImageContainer" class="mb-6 hidden">
+                                <img id="questionImage" src="" alt="Gambar Soal" class="max-h-64 rounded-xl border border-slate-200 object-contain mx-auto">
+                            </div>
+                            <div id="optionsContainer" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                        <button id="btnPrev" onclick="navigateQuestion(-1)" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                            Sebelumnya
+                        </button>
+                        <button id="btnNext" onclick="navigateQuestion(1)" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 shadow-md shadow-emerald-100">
+                            Selesai & Kumpulkan 🏁
+                        </button>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-1 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col h-fit">
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+                        <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                            Navigasi Nomor
+                        </h3>
+                        <span id="answeredCount" class="text-[11px] bg-slate-100 px-2.5 py-1 rounded-lg text-slate-700 font-bold">0 / 0 Terjawab</span>
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-2 mb-4 flex items-center justify-between text-[11px] font-semibold">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <span class="text-emerald-800">Dijawab</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                            <span class="text-amber-800">Ragu-Ragu</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                            <span class="text-slate-600">Kosong</span>
+                        </div>
+                    </div>
+
+                    <div id="numberPalette" class="grid grid-cols-4 gap-2 custom-scrollbar max-h-80 overflow-y-auto pr-0.5"></div>
+                </div>
+            </main>
+        </section>
+
+        <!-- SCREEN 4: HASIL & PEMBAHASAN UJIAN -->
+        <section id="screenResult" class="hidden flex-1 flex flex-col min-h-screen bg-slate-100">
+            <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 my-4 space-y-6">
                 
-                <!-- Sub Header Soal -->
-                <div class="bg-slate-50 border-b border-slate-200 p-3 sm:p-4 flex justify-between items-center">
-                    <span class="font-bold text-xs sm:text-sm bg-indigo-100 text-indigo-800 px-3 py-1 rounded-lg flex items-center gap-1.5">
-                        <i class="fa-solid fa-file-pen"></i> Soal No. <span id="currentQuestionNumber">1</span>
-                    </span>
-
-                    <!-- Status Ragu Ragu -->
-                    <label class="flex items-center gap-2 text-xs sm:text-sm font-bold text-amber-700 cursor-pointer bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1 rounded-lg transition select-none">
-                        <input type="checkbox" id="doubtCheckbox" onchange="toggleDoubtStatus()" class="rounded text-amber-500 focus:ring-amber-400 w-4 h-4 cursor-pointer">
-                        <span>Ragu-Ragu</span>
-                    </label>
-                </div>
-
-                <!-- Teks Pertanyaan & Gambar -->
-                <div class="p-5 sm:p-6 flex-1 custom-scroll overflow-y-auto">
-                    <div id="questionText" class="text-sm sm:text-base text-slate-800 leading-relaxed font-medium mb-3">
-                        <!-- Teks soal diisi JS -->
+                <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200/80">
+                    <div class="result-header-bg p-8 sm:p-10 text-center text-white relative">
+                        <div class="w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/20 shadow-inner text-3xl">
+                            🏆
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1">Ujian Telah Selesai</h1>
+                        <p class="text-xs sm:text-sm text-emerald-100 font-medium">Laporan Hasil, Rekapitulasi Nilai & Evaluasi Pembahasan</p>
                     </div>
 
-                    <!-- Container Gambar Soal (Dukungan Gambar Rapi) -->
-                    <div id="questionImageContainer" class="hidden my-4 text-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                        <img id="questionImage" src="" alt="Gambar Soal" class="max-h-80 mx-auto rounded-xl object-contain shadow-xs cursor-pointer hover:opacity-95 transition" onclick="zoomImage(this.src)">
-                        <p class="text-[11px] text-slate-400 mt-1.5 flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-magnifying-glass-plus"></i> Klik gambar untuk memperbesar
-                        </p>
-                    </div>
+                    <div class="p-6 sm:p-8 space-y-6">
+                        <!-- Identitas Peserta & Ujian -->
+                        <div class="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                            <div>
+                                <span class="text-slate-400 block font-medium mb-1">Nama Peserta:</span>
+                                <span id="resNama" class="font-bold text-slate-800 text-sm"></span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block font-medium mb-1">Nomor Ujian / NIM:</span>
+                                <span id="resNim" class="font-bold text-slate-800 text-sm"></span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block font-medium mb-1">Mata Uji:</span>
+                                <span id="resPackageTitle" class="font-bold text-slate-800 text-sm"></span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block font-medium mb-1">Tanggal Selesai:</span>
+                                <span id="resDate" class="font-bold text-slate-800 text-sm"></span>
+                            </div>
+                        </div>
 
-                    <!-- Container Opsi Jawaban -->
-                    <div id="optionsContainer" class="space-y-3 mt-4">
-                        <!-- Diisi Opsi JS -->
+                        <!-- Card Statistik Nilai -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-center">
+                                <span class="text-3xl sm:text-4xl font-extrabold text-emerald-600 block" id="resScore">0</span>
+                                <span class="text-[11px] font-bold text-emerald-800 tracking-wider uppercase mt-1 block">Nilai Akhir (0-100)</span>
+                            </div>
+                            <div class="bg-sky-50 border border-sky-200 rounded-2xl p-5 text-center">
+                                <span class="text-3xl sm:text-4xl font-extrabold text-sky-600 block" id="resCorrect">0 / 0</span>
+                                <span class="text-[11px] font-bold text-sky-800 tracking-wider uppercase mt-1 block">Jawaban Benar</span>
+                            </div>
+                            <div class="bg-rose-50 border border-rose-200 rounded-2xl p-5 text-center">
+                                <span class="text-3xl sm:text-4xl font-extrabold text-rose-600 block" id="resWrong">0 Soal</span>
+                                <span class="text-[11px] font-bold text-rose-800 tracking-wider uppercase mt-1 block">Salah / Kosong</span>
+                            </div>
+                        </div>
+
+                        <!-- Feedback Box -->
+                        <div class="bg-indigo-50/80 border border-indigo-100 rounded-2xl p-4 flex items-start gap-3 text-xs text-indigo-950">
+                            <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 font-bold text-sm">
+                                🤖
+                            </div>
+                            <div>
+                                <h4 class="font-extrabold text-indigo-950 text-xs mb-0.5">Evaluasi & Feedback Singkat:</h4>
+                                <p id="resFeedback" class="text-indigo-800 leading-relaxed"></p>
+                            </div>
+                        </div>
+
+                        <!-- Rincian Pembahasan Soal per Nomor -->
+                        <div class="space-y-4 pt-2">
+                            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                                <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-wider flex items-center gap-2">
+                                    <span>📊</span> Lihat Detail Pembahasan Jawaban Per Nomor
+                                </h3>
+                            </div>
+
+                            <div id="reviewContainer" class="space-y-4"></div>
+                        </div>
+
+                        <!-- Action Buttons Bottom -->
+                        <div class="pt-6 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3 no-print">
+                            <button onclick="retryCurrentExam()" class="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                                🔄 Ulangi Ujian
+                            </button>
+                            <button onclick="openBankModal('ai')" class="px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                                ➕ Tambah Soal
+                            </button>
+                            <button onclick="window.print()" class="px-4 py-3 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                                🖨️ Cetak Hasil
+                            </button>
+                            <button onclick="showScreen('screenDashboard')" class="px-4 py-3 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                                🏠 Halaman Utama
+                            </button>
+                        </div>
+
                     </div>
                 </div>
 
-                <!-- Footer Navigasi Bawah -->
-                <div class="bg-slate-50 border-t border-slate-200 p-3 sm:p-4 flex justify-between items-center">
-                    <button onclick="navigateQuestion(-1)" id="btnPrev" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-2">
-                        <i class="fa-solid fa-chevron-left"></i> Sebelumnya
-                    </button>
-                    <button onclick="navigateQuestion(1)" id="btnNext" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold px-5 py-2.5 rounded-xl shadow transition flex items-center gap-2">
-                        <span id="btnNextText">Selanjutnya</span> <i id="btnNextIcon" class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
+            </main>
+        </section>
 
-            <!-- Kolom Grid Nomor Soal (4/12) -->
-            <div class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col h-fit">
-                <div class="flex items-center justify-between border-b pb-3 mb-3">
-                    <h3 class="font-bold text-sm text-slate-700 flex items-center gap-2">
-                        <i class="fa-solid fa-border-all text-indigo-600"></i> Navigasi Nomor
-                    </h3>
-                    <span id="answeredBadge" class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
-                        0 / 0 Terjawab
-                    </span>
-                </div>
-
-                <!-- Keterangan Indikator Warna -->
-                <div class="grid grid-cols-3 gap-1.5 text-[10px] text-slate-600 font-bold mb-4 bg-slate-50 p-2 rounded-xl border border-slate-200">
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-md bg-emerald-500 inline-block"></span> Dijawab
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-md bg-amber-400 inline-block"></span> Ragu-Ragu
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-md bg-slate-200 border inline-block"></span> Kosong
-                    </div>
-                </div>
-
-                <!-- Tombol Nomor Soal -->
-                <div id="questionGrid" class="grid grid-cols-5 gap-2 max-h-[360px] overflow-y-auto custom-scroll p-1">
-                    <!-- Nomor di-generate via JS -->
-                </div>
-            </div>
-        </main>
     </div>
 
-    <!-- ================= 3. HALAMAN REKAP HASIL & PEMBAHASAN ================= -->
-    <div id="screen-result" class="min-h-screen hidden items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-xl w-full max-w-3xl overflow-hidden border border-slate-200 print-card my-6">
-            <!-- Header Rekap -->
-            <div class="bg-gradient-to-r from-emerald-600 via-teal-700 to-indigo-800 text-white p-6 sm:p-8 text-center relative">
-                <div class="inline-flex bg-white/20 p-4 rounded-full mb-2 backdrop-blur-md border border-white/20 shadow-inner">
-                    <i class="fa-solid fa-trophy text-4xl text-amber-300"></i>
+    <!-- MODAL POPUP KONFIRMASI SELESAI UJIAN -->
+    <div id="confirmSubmitModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-100 transform transition-all">
+            
+            <div class="bg-rose-600 p-6 text-center text-white relative">
+                <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 font-bold text-2xl shadow-inner border border-white/30">
+                    ❓
                 </div>
-                <h2 class="text-2xl sm:text-3xl font-black">Ujian Telah Selesai</h2>
-                <p class="text-emerald-100 text-xs sm:text-sm">Laporan Hasil, Rekapitulasi Nilai & Evaluasi Pembahasan</p>
-            </div>
-
-            <div class="p-6 sm:p-8 space-y-6">
-                <!-- Info Identitas -->
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm">
-                    <div>
-                        <span class="text-slate-400 block font-medium">Nama Peserta:</span>
-                        <strong id="resStudentName" class="text-slate-800 block truncate">-</strong>
-                    </div>
-                    <div>
-                        <span class="text-slate-400 block font-medium">Nomor Ujian:</span>
-                        <strong id="resStudentId" class="text-slate-800 block truncate">-</strong>
-                    </div>
-                    <div>
-                        <span class="text-slate-400 block font-medium">Mata Uji:</span>
-                        <strong id="resExamTitle" class="text-slate-800 block truncate">-</strong>
-                    </div>
-                    <div>
-                        <span class="text-slate-400 block font-medium">Tanggal Selesai:</span>
-                        <strong id="resTimestamp" class="text-slate-800 block truncate">-</strong>
-                    </div>
-                </div>
-
-                <!-- Kartu Skor Raksasa -->
-                <div class="grid grid-cols-3 gap-3 text-center">
-                    <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl">
-                        <div id="resScore" class="text-3xl sm:text-4xl font-black text-emerald-600">0</div>
-                        <div class="text-[11px] font-bold text-emerald-800 uppercase mt-1">Nilai Akhir (0-100)</div>
-                    </div>
-                    <div class="bg-sky-50 border border-sky-200 p-4 rounded-2xl">
-                        <div id="resCorrect" class="text-3xl sm:text-4xl font-black text-sky-600">0</div>
-                        <div class="text-[11px] font-bold text-sky-800 uppercase mt-1">Jawaban Benar</div>
-                    </div>
-                    <div class="bg-rose-50 border border-rose-200 p-4 rounded-2xl">
-                        <div id="resWrong" class="text-3xl sm:text-4xl font-black text-rose-600">0</div>
-                        <div class="text-[11px] font-bold text-rose-800 uppercase mt-1">Salah / Kosong</div>
-                    </div>
-                </div>
-
-                <!-- Kotak Umpan Balik Performa AI -->
-                <div id="feedbackBox" class="bg-indigo-50/80 border border-indigo-200 p-4 rounded-2xl flex items-start gap-3">
-                    <i class="fa-solid fa-robot text-indigo-600 text-2xl mt-0.5"></i>
-                    <div>
-                        <h4 class="font-bold text-xs sm:text-sm text-indigo-950 mb-0.5">Evaluasi & Feedback Singkat:</h4>
-                        <p id="feedbackText" class="text-xs text-indigo-800 leading-relaxed">
-                            Sedang menghitung performa...
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Accordion Pembahasan Jawaban -->
-                <div class="border border-slate-200 rounded-2xl overflow-hidden no-print">
-                    <button onclick="toggleReviewSection()" class="w-full bg-slate-100 hover:bg-slate-200 p-3.5 text-xs sm:text-sm font-bold text-slate-700 flex justify-between items-center transition">
-                        <span><i class="fa-solid fa-magnifying-glass-chart text-indigo-600 mr-2"></i> Lihat Detail Pembahasan Jawaban Per Nomor</span>
-                        <i id="reviewChevron" class="fa-solid fa-chevron-down transition-transform"></i>
-                    </button>
-                    <div id="reviewContainer" class="hidden p-4 bg-slate-50 border-t space-y-4 max-h-[400px] overflow-y-auto custom-scroll">
-                        <!-- Diisi via JS -->
-                    </div>
-                </div>
-
-                <!-- Opsi Tombol Aksi Lengkap -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 no-print pt-2">
-                    <button onclick="restartCurrentExam()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-2 rounded-xl shadow transition text-xs flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-rotate-right"></i> Ulangi Ujian
-                    </button>
-                    <button onclick="openImporterModal()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-2 rounded-xl shadow transition text-xs flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-plus"></i> Tambah Soal
-                    </button>
-                    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-2 rounded-xl shadow transition text-xs flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-print"></i> Cetak Hasil
-                    </button>
-                    <button onclick="returnToHome()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-2 rounded-xl shadow transition text-xs flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-house"></i> Halaman Utama
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= 4. MODAL KONFIRMASI SELESAI UJIAN ================= -->
-    <div id="finishModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="bg-rose-600 text-white p-5 text-center">
-                <div class="inline-flex bg-white/20 p-3 rounded-full mb-2">
-                    <i class="fa-solid fa-circle-question text-3xl"></i>
-                </div>
-                <h3 class="font-black text-lg">Selesaikan Ujian Sekarang?</h3>
-                <p class="text-rose-100 text-xs mt-0.5">Pastikan Anda telah memeriksa jawaban Anda.</p>
+                <h3 class="text-lg font-extrabold tracking-tight">Selesaikan Ujian Sekarang?</h3>
+                <p class="text-xs text-rose-100 font-light mt-1">Pastikan Anda telah memeriksa kembali semua jawaban Anda.</p>
             </div>
 
             <div class="p-6 space-y-4">
-                <div class="bg-slate-50 border p-4 rounded-2xl space-y-2 text-xs">
-                    <div class="flex justify-between items-center border-b pb-2">
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2 text-xs">
+                    <div class="flex items-center justify-between">
                         <span class="text-slate-500 font-medium">Soal Terjawab:</span>
-                        <strong id="modalAnsweredCount" class="text-emerald-600 font-bold text-sm">0 Soal</strong>
+                        <span id="modalAnsweredCount" class="font-extrabold text-emerald-600">0 / 0 Soal</span>
                     </div>
-                    <div class="flex justify-between items-center border-b pb-2">
+                    <div class="flex items-center justify-between">
                         <span class="text-slate-500 font-medium">Masih Ragu-Ragu:</span>
-                        <strong id="modalDoubtCount" class="text-amber-600 font-bold text-sm">0 Soal</strong>
+                        <span id="modalDoubtCount" class="font-extrabold text-amber-600">0 Soal</span>
                     </div>
-                    <div class="flex justify-between items-center">
+                    <div class="flex items-center justify-between">
                         <span class="text-slate-500 font-medium">Belum Dijawab:</span>
-                        <strong id="modalUnansweredCount" class="text-rose-600 font-bold text-sm">0 Soal</strong>
+                        <span id="modalUnansweredCount" class="font-extrabold text-rose-600">0 Soal</span>
                     </div>
                 </div>
 
-                <div id="warningUnansweredText" class="hidden text-xs text-rose-700 bg-rose-50 border border-rose-200 p-3 rounded-xl flex items-center gap-2">
-                    <i class="fa-solid fa-triangle-exclamation text-base shrink-0"></i>
-                    <span>Masih ada soal yang belum diisi! Yakin ingin menyelesaikan?</span>
-                </div>
-
-                <div class="flex gap-3">
-                    <button type="button" onclick="closeFinishModal()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl transition text-xs">
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="closeConfirmModal()" class="w-full py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-xl transition">
                         Kembali Periksa
                     </button>
-                    <button type="button" onclick="finishExam()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl shadow-md transition text-xs">
+                    <button onclick="executeFinishExam()" class="w-full py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md transition">
                         Ya, Selesaikan
                     </button>
                 </div>
             </div>
+
         </div>
     </div>
 
-    <!-- ================= 5. MODAL IMPOR GEMINI AI & FILE RUJUKAN MATERI ================= -->
-    <div id="importerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
-            <!-- Header Modal -->
-            <div class="bg-gradient-to-r from-indigo-900 to-slate-900 text-white p-4 sm:p-5 flex justify-between items-center">
-                <div class="flex items-center gap-2.5">
-                    <div class="bg-indigo-600/50 p-2 rounded-xl border border-indigo-400/30">
-                        <i class="fa-solid fa-boxes-stacked text-amber-300 text-xl"></i>
+    <!-- MODAL BANK SOAL & GENERATOR AI -->
+    <div id="bankModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-5 hidden transition-opacity">
+        <div class="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+            
+            <div class="modal-header-bg p-5 text-white flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-emerald-500/30 text-emerald-200 rounded-xl flex items-center justify-center font-bold text-lg border border-emerald-400/30">
+                        <svg class="w-6 h-6 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                     </div>
                     <div>
-                        <h3 class="font-bold text-sm sm:text-base leading-tight">Bank Soal & Generator Gemini AI</h3>
-                        <p class="text-[11px] text-indigo-200">Kelola paket soal tersimpan atau buat soal baru dari materi/file</p>
+                        <h2 class="text-base sm:text-lg font-extrabold tracking-wide">Bank Soal & Generator Gemini AI</h2>
+                        <p class="text-xs text-emerald-200 font-light">Kelola paket soal tersimpan atau buat soal baru dari materi/file</p>
                     </div>
                 </div>
-                <button onclick="closeImporterModal()" class="text-indigo-200 hover:text-white text-xl transition p-1">
-                    <i class="fa-solid fa-xmark"></i>
+                <button onclick="closeBankModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-lg transition">
+                    ✕
                 </button>
             </div>
 
-            <!-- Tab Switcher (3 TAB) -->
-            <div class="bg-slate-100 p-2 border-b flex flex-wrap sm:flex-nowrap gap-1.5 text-xs font-bold px-4">
-                <button type="button" onclick="switchImportTab('manage')" id="tabManageBtn" class="flex-1 py-2 px-3 rounded-xl bg-white text-indigo-700 shadow-xs border border-indigo-200 flex items-center justify-center gap-2 transition">
-                    <i class="fa-solid fa-folder-open text-indigo-600"></i> Daftar Bank Soal (<span id="savedPkgCountBadge">0</span>)
+            <div class="bg-slate-50 border-b border-slate-200 px-4 pt-3 flex items-center gap-2 overflow-x-auto shrink-0 custom-scrollbar">
+                <button id="tabBtnList" onclick="switchBankTab('list')" class="px-4 py-2.5 rounded-t-xl text-xs font-bold transition flex items-center gap-2 border-b-2 border-brand-600 text-brand-700 bg-white">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    Daftar Bank Soal ( <span id="modalBankCount">0</span> )
                 </button>
-                <button type="button" onclick="switchImportTab('auto')" id="tabAutoBtn" class="flex-1 py-2 px-3 rounded-xl text-slate-600 hover:bg-white/60 flex items-center justify-center gap-2 transition">
-                    <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Buat Otomatis via AI + File Rujukan
+                <button id="tabBtnAi" onclick="switchBankTab('ai')" class="px-4 py-2.5 rounded-t-xl text-xs font-bold transition flex items-center gap-2 text-slate-500 hover:text-slate-700">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Buat Otomatis via AI + File Rujukan
                 </button>
-                <button type="button" onclick="switchImportTab('manual')" id="tabManualBtn" class="flex-1 py-2 px-3 rounded-xl text-slate-600 hover:bg-white/60 flex items-center justify-center gap-2 transition">
-                    <i class="fa-solid fa-code text-slate-500"></i> Tempel JSON Manual
+                <button id="tabBtnJson" onclick="switchBankTab('json')" class="px-4 py-2.5 rounded-t-xl text-xs font-bold transition flex items-center gap-2 text-slate-500 hover:text-slate-700">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                    Tempel JSON Manual
                 </button>
             </div>
 
-            <!-- Body Modal -->
-            <div class="p-5 sm:p-6 custom-scroll overflow-y-auto flex-1 space-y-5">
-                
-                <!-- TAB 0: DAFTAR & KELOLA BANK SOAL TERSIMPAN -->
-                <div id="tabManageContent" class="space-y-4">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                        <div>
-                            <h4 class="font-bold text-xs sm:text-sm text-slate-800 flex items-center gap-1.5">
-                                <i class="fa-solid fa-database text-indigo-600"></i> Katalog Paket Soal yang Pernah Dibuat
-                            </h4>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Semua paket soal tersimpan di peramban dan siap dimainkan atau diunduh.</p>
-                        </div>
-                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <label class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0">
-                                <i class="fa-solid fa-file-import"></i> Load File JSON
-                                <input type="file" id="jsonFileInput" onchange="importPackageFromFile(event)" accept=".json" class="hidden">
-                            </label>
-                            <button type="button" onclick="exportAllPackages()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 shadow-2xs">
-                                <i class="fa-solid fa-file-export text-amber-300"></i> Ekspor Semua
-                            </button>
-                        </div>
+            <div class="p-6 flex-1 overflow-y-auto custom-scrollbar space-y-6">
+
+                <div id="tabContentList" class="space-y-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <p class="text-xs text-slate-500 font-medium">Daftar semua paket soal yang tersimpan di sistem local CBT ini.</p>
+                        <button onclick="switchBankTab('ai')" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                            ➕ Buat Paket Baru
+                        </button>
                     </div>
 
-                    <!-- Container Kartu Paket Soal -->
-                    <div id="managePackagesList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                        <!-- Diisi via JavaScript -->
-                    </div>
+                    <div id="modalBankContainer" class="space-y-3"></div>
                 </div>
 
-                <!-- TAB 1: GENERATE OTOMATIS VIA GEMINI API -->
-                <div id="tabAutoContent" class="hidden space-y-4">
-                    <div class="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-4">
-                        <h4 class="font-bold text-xs sm:text-sm text-slate-800 flex items-center gap-1.5 mb-2">
-                            <i class="fa-solid fa-file-arrow-up text-indigo-600"></i> File Rujukan / Materi Pembelajaran (Custom Question Context)
-                        </h4>
+                <div id="tabContentAi" class="hidden space-y-5">
+                    <div class="bg-emerald-50/70 rounded-2xl p-5 border border-emerald-100 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-extrabold text-brand-900 uppercase tracking-wider flex items-center gap-1.5">
+                                File Rujukan / Materi Pembelajaran (Custom Question Context)
+                            </h3>
+                        </div>
 
-                        <!-- Input API Key Gemini -->
-                        <div class="bg-indigo-50/80 border border-indigo-200 p-3 sm:p-4 rounded-2xl space-y-2.5">
-                            <label class="block text-[11px] font-bold text-indigo-950">
-                                <i class="fa-solid fa-key text-amber-500 mr-1"></i> Gemini API Key (Wajib jika di-deploy / dibuka di luar editor):
+                        <div class="bg-white rounded-xl p-4 border border-emerald-100 shadow-sm space-y-3">
+                            <label class="block text-xs font-bold text-slate-700">
+                                🔑 Gemini API Key <span class="text-slate-400 font-normal">(Wajib jika di-deploy / dibuka di luar editor):</span>
                             </label>
-                            <div class="flex gap-2 items-center">
-                                <input type="password" id="geminiApiKeyInput" placeholder="Masukkan API Key (misal: AIzaSy...)" class="flex-1 p-2 text-xs border border-indigo-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-mono">
-                                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-2 rounded-xl transition shrink-0 flex items-center gap-1 shadow-xs">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Ambil Key Gratis
+                            
+                            <div class="flex gap-2">
+                                <input type="password" id="aiApiKey" placeholder="Masukkan Gemini API Key gratis kamu..." 
+                                    class="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 focus:border-brand-600 text-xs outline-none font-mono">
+                                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0">
+                                    ↗️ Ambil Key Gratis
                                 </a>
                             </div>
 
-                            <!-- Kotak Salin API Key Rekomendasi / Default -->
-                            <div class="bg-white/90 p-2.5 rounded-xl border border-indigo-200 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 text-[11px]">
-                                <div class="flex items-center gap-2 truncate">
-                                    <span class="bg-amber-100 text-amber-800 font-extrabold text-[10px] px-2 py-0.5 rounded-md shrink-0">Key Rekomendasi</span>
-                                    <code id="defaultApiKeyText" class="font-mono text-slate-700 truncate select-all">AQ.Ab8RN6IuZ_eGuhXG_hYka1gNUAj_08bXaC2fGkfEdmyausZUkg</code>
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-xs">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 bg-amber-500 text-white font-extrabold rounded text-[10px]">Key Rekomendasi</span>
+                                    <span class="font-mono text-slate-600 text-[11px] truncate max-w-[200px] sm:max-w-[320px]" id="sampleKeyText">AQ.Ab8RN6IuZ_eGuhXG_hYka1gNUAj_08bXaC2FGkfEdmyausZUkg</span>
                                 </div>
-                                <div class="flex items-center gap-1.5 shrink-0 ml-auto">
-                                    <button type="button" onclick="useDefaultApiKey()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-bold px-2.5 py-1 rounded-lg transition flex items-center gap-1 text-[11px]">
-                                        <i class="fa-solid fa-check text-indigo-600"></i> Gunakan Key Ini
-                                    </button>
-                                    <button type="button" onclick="copyDefaultApiKey()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded-lg transition text-[11px]" title="Salin ke Clipboard">
-                                        <i class="fa-regular fa-copy"></i>
-                                    </button>
-                                </div>
+                                <button onclick="useRecommendedKey()" class="px-3 py-1 bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[11px] rounded-lg transition shrink-0 flex items-center gap-1">
+                                    ✅ Gunakan Key Ini
+                                </button>
                             </div>
 
-                            <p class="text-[10px] text-indigo-800">Dapatkan API Key gratis dari Google AI Studio atau gunakan Key rekomendasi di atas. Kunci akan tersimpan secara otomatis di peramban Anda.</p>
+                            <p class="text-[11px] text-slate-500">Dapatkan API Key gratis dari Google AI Studio atau gunakan Key rekomendasi di atas. Kunci akan tersimpan secara otomatis di peramban Anda.</p>
 
-                            <!-- Accordion Panduan Ambil API Key -->
-                            <details class="text-[11px] bg-white/90 p-3 rounded-xl border border-indigo-200/80 group">
-                                <summary class="font-bold text-indigo-900 flex items-center gap-1.5 cursor-pointer select-none hover:text-indigo-600 transition">
-                                    <i class="fa-solid fa-circle-question text-amber-500"></i> Panduan Cara Mengambil Gemini API Key Gratis (3 Langkah)
-                                    <i class="fa-solid fa-chevron-down text-[10px] ml-auto transition-transform group-open:rotate-180"></i>
+                            <details class="text-xs bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
+                                <summary class="p-3 font-semibold text-slate-700 cursor-pointer flex items-center justify-between select-none">
+                                    <span>❓ Panduan Cara Mengambil Gemini API Key Gratis (3 Langkah)</span>
+                                    <span>▼</span>
                                 </summary>
-                                <div class="pt-2 border-t border-indigo-100 mt-2 space-y-1.5 text-slate-700 leading-relaxed">
-                                    <p class="font-semibold text-indigo-950">Ikuti langkah mudah berikut jika ingin menggunakan API Key milik sendiri:</p>
-                                    <ol class="list-decimal list-inside space-y-1 pl-1">
-                                        <li>Klik tombol <strong class="text-indigo-700">"Ambil Key Gratis"</strong> di atas (lalu login menggunakan akun Google / Gmail Anda).</li>
-                                        <li>Di situs Google AI Studio, klik tombol biru <strong class="text-indigo-700">"Create API Key"</strong> &gt; pilih <strong class="text-indigo-700">"Create API key in new project"</strong>.</li>
-                                        <li>Salin (copy) kode kunci unik yang ditampilkan (diawali <code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-indigo-800">AIzaSy...</code>) lalu tempelkan (<em class="italic">paste</em>) ke dalam kolom input di atas.</li>
-                                    </ol>
-                                    <p class="text-[10px] text-slate-500 italic mt-1">* Catatan: Layanan API Key ini 100% gratis dari Google tanpa perlu kartu kredit.</p>
+                                <div class="p-3 border-t border-slate-200 text-slate-600 space-y-1.5 text-[11px] leading-relaxed">
+                                    <p>1. Buka <strong>Google AI Studio</strong> (aistudio.google.com) lalu login akun Google Anda.</p>
+                                    <p>2. Klik tombol <strong>"Get API key"</strong> di sebelah kiri atas, lalu pilih <strong>"Create API key"</strong>.</p>
+                                    <p>3. Salin kode API key yang didapat dan tempelkan pada kolom di atas.</p>
                                 </div>
                             </details>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Upload Berkas Rujukan (PDF, TXT, Gambar PNG/JPG):</label>
-                                <div class="flex items-center gap-2 bg-white p-1.5 border border-slate-300 rounded-xl">
-                                    <label class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition cursor-pointer shrink-0 shadow-2xs">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Upload Berkas Rujukan (PDF, TXT, Gambar PNG/JPG):</label>
+                                <div class="flex items-center gap-2 bg-white rounded-xl border border-slate-200 p-1.5">
+                                    <label class="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg cursor-pointer transition shrink-0">
                                         Pilih File
-                                        <input type="file" id="referenceFileInput" onchange="handleReferenceFileUpload(event)" accept="image/*,.txt,.md,.pdf,application/pdf" class="hidden">
+                                        <input type="file" id="aiFile" accept=".pdf,.txt,.png,.jpg,.jpeg" onchange="updateFileName()" class="hidden">
                                     </label>
-                                    <span id="fileStatusText" class="text-xs text-slate-500 truncate">Tidak ada file yang dipilih</span>
+                                    <span id="aiFileName" class="text-xs text-slate-400 truncate px-2">Tidak ada file yang dipilih</span>
                                 </div>
                             </div>
+
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-700 mb-1">Topik Utama / Instruksi Tambahan:</label>
-                                <input type="text" id="aiTopicInput" placeholder="Contoh: Buat 5 soal kuis Biologi Sel Bab 3 pilihan ganda A-E" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
+                                <label class="block text-xs font-bold text-slate-700 mb-1.5">Topik Utama / Instruksi Tambahan:</label>
+                                <input type="text" id="aiTopic" placeholder="Contoh: Buat 5 soal kuis Biologi Sel Bab 3 pilihan ganda A-E" 
+                                    class="w-full px-3.5 py-2.5 bg-white rounded-xl border border-slate-200 focus:border-brand-600 text-xs outline-none">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-700 mb-1">Catatan Teks / Rangkuman Materi Lengkap:</label>
-                            <textarea id="aiTextContextInput" rows="4" placeholder="Tempel materi modul, kisi-kisi, rangkuman bab, atau soal acuan di sini agar Gemini membuatkan soal dari materi ini..." class="w-full p-3 font-sans text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white"></textarea>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Catatan Teks / Rangkuman Materi Lengkap:</label>
+                            <textarea id="aiTextContext" rows="3" placeholder="Tempel materi modul, kisi-kisi, rangkuman bab, atau soal acuan di sini agar Gemini membuatkan soal dari materi ini..." 
+                                class="w-full p-3.5 bg-white rounded-xl border border-slate-200 focus:border-brand-600 text-xs outline-none custom-scrollbar"></textarea>
                         </div>
 
-                        <div class="flex items-center justify-between pt-2">
+                        <div class="flex items-center justify-between gap-4 pt-2">
                             <div class="flex items-center gap-2">
-                                <label class="text-[11px] font-bold text-slate-700">Jumlah Soal:</label>
-                                <select id="aiQuestionCount" class="p-2 text-xs border border-slate-300 rounded-xl bg-white font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+                                <label class="text-xs font-bold text-slate-700">Jumlah Soal:</label>
+                                <select id="aiQuestionCount" class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold outline-none">
                                     <option value="5">5 Soal</option>
                                     <option value="10" selected>10 Soal</option>
                                     <option value="15">15 Soal</option>
                                     <option value="20">20 Soal</option>
                                 </select>
                             </div>
-                            <button type="button" onclick="generateExamWithGemini()" id="btnGenerateGemini" class="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
-                                <i class="fa-solid fa-bolt text-amber-300"></i> Generate Soal Otomatis
+
+                            <button onclick="generateWithAI()" id="btnGenerateAi" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md shadow-emerald-200 transition flex items-center gap-2">
+                                ⚡ Generate Soal Otomatis
                             </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Judul Paket Soal</label>
+                            <input type="text" id="aiPkgTitle" placeholder="Contoh: Kuis Biologi Sel - Kelas X" 
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-brand-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Durasi Ujian (Menit)</label>
+                            <input type="number" id="aiPkgDuration" value="30" min="1" 
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-brand-600">
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 2: TEMPEL JSON MANUAL -->
-                <div id="tabManualContent" class="hidden space-y-4">
-                    <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl text-xs text-amber-900 flex justify-between items-center">
-                        <div>
-                            <span class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-copy text-amber-600"></i> Salin Prompt untuk Gemini Chat:</span>
-                            <p class="text-[11px] text-amber-800 mt-0.5">Gunakan tombol di samping jika Anda lebih suka obrolan manual di aplikasi Gemini.</p>
+                <div id="tabContentJson" class="hidden space-y-5">
+                    <div class="bg-amber-50 rounded-2xl p-4 border border-amber-200/80 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-base">📋</span>
+                            <div>
+                                <h4 class="text-xs font-extrabold text-amber-900">Salin Prompt khusus untuk Gemini Chat:</h4>
+                                <p class="text-[11px] text-amber-700">Gunakan tombol di samping jika Anda ingin generate secara manual di aplikasi Gemini Chat.</p>
+                            </div>
                         </div>
-                        <button onclick="copyGeminiPrompt()" class="bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition shrink-0 flex items-center gap-1">
-                            <i class="fa-regular fa-copy"></i> Salin Prompt
+                        <button onclick="copyGeminiPrompt()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 shrink-0">
+                            📋 Salin Prompt
                         </button>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Tempel (Paste) Hasil JSON Gemini Di Sini</label>
-                        <textarea id="importJsonArea" rows="7" placeholder='[
-  {
-    "question": "Seorang laki-laki berusia 45 tahun ditemukan memiliki nodul tiroid...",
-    "image": "https://i.ibb.co/usg-example.jpg",
-    "options": ["Benign (<1%)", "Very Low Suspicion (<3%)", "Low Suspicion (5-10%)", "Intermediate Suspicion (10-20%)", "High Suspicion (>70-90%)"],
-    "answer": 3,
-    "explanation": "Pemeriksaan USG menunjukkan nodul padat hipoekoik dengan margin tidak teratur..."
-  }
-]' class="w-full p-3 font-mono text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50"></textarea>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Tempel (Paste) Hasil JSON Gemini Di Sini</label>
+                        <textarea id="jsonInput" rows="7" placeholder='[&#10;  {&#10;    "question": "Diketahui fungsi $f(x) = \\sqrt{x}$. Nilai $f(4)$ adalah...",&#10;    "image": "",&#10;    "options": ["1", "2", "3", "4", "5"],&#10;    "answer": 1,&#10;    "explanation": "Akar dari 4 adalah 2."&#10;  }&#10;]' 
+                            class="w-full p-4 bg-slate-900 text-slate-100 font-mono text-xs rounded-2xl border border-slate-800 focus:border-brand-600 outline-none custom-scrollbar leading-relaxed"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Judul Paket Soal</label>
+                            <input type="text" id="jsonPkgTitle" placeholder="Contoh: Kuis Biologi Sel - Kelas X" 
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-brand-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Durasi Ujian (Menit)</label>
+                            <input type="number" id="jsonPkgDuration" value="30" min="1" 
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs outline-none focus:border-brand-600">
+                        </div>
                     </div>
                 </div>
 
-                <!-- Metadata Paket Soal Baru -->
-                <div id="newPkgMetaSection" class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-200">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Judul Paket Soal</label>
-                        <input type="text" id="importExamTitle" placeholder="Contoh: Kuis Biologi Sel - Kelas X" class="w-full p-2.5 text-xs sm:text-sm border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Durasi Ujian (Menit)</label>
-                        <input type="number" id="importExamDuration" value="30" min="1" class="w-full p-2.5 text-xs sm:text-sm border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
-                    </div>
-                </div>
             </div>
 
-            <!-- Footer Modal Impor -->
-            <div class="bg-slate-100 p-4 sm:p-5 flex justify-between items-center border-t border-slate-200">
-                <button type="button" onclick="closeImporterModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold px-4 py-2 rounded-xl transition">
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+                <button onclick="closeBankModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition">
                     Tutup
                 </button>
-                <button type="button" id="btnSavePackageFooter" onclick="saveImportedPackage()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2 rounded-xl shadow transition hidden">
-                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> Simpan Paket Soal
+                <button onclick="saveCurrentPackage()" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-2">
+                    💾 Simpan Paket Soal
                 </button>
             </div>
+
         </div>
     </div>
 
-    <!-- ================= 6. MODAL PRATINJAU PAKET SOAL (STANDALONE) ================= -->
-    <div id="previewModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden">
-            <div class="bg-slate-900 text-white p-4 sm:p-5 flex justify-between items-center">
-                <div class="flex items-center gap-2.5">
-                    <i class="fa-solid fa-eye text-amber-300 text-lg"></i>
+    <!-- PREVIEW MODAL -->
+    <div id="previewModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-5 hidden transition-opacity">
+        <div class="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[85vh]">
+            <div class="modal-header-bg p-5 text-white flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/30 border border-emerald-400/30 text-emerald-200 flex items-center justify-center font-bold text-base">
+                        👁️
+                    </div>
                     <div>
-                        <h3 id="previewModalTitle" class="font-bold text-sm sm:text-base leading-tight">Pratinjau Paket Soal</h3>
-                        <p id="previewModalSubtitle" class="text-[11px] text-slate-400">0 Pertanyaan</p>
+                        <h3 id="previewTitle" class="font-extrabold text-sm sm:text-base">Pratinjau Paket Soal</h3>
+                        <p id="previewSubtitle" class="text-xs text-emerald-200 font-light"></p>
                     </div>
                 </div>
-                <button onclick="closePreviewModal()" class="text-slate-400 hover:text-white text-xl p-1 transition">
-                    <i class="fa-solid fa-xmark"></i>
+                <button onclick="closePreviewModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition font-bold text-lg">
+                    ✕
                 </button>
             </div>
-            <div id="previewModalBody" class="p-4 sm:p-6 custom-scroll overflow-y-auto flex-1 space-y-4">
-                <!-- Diisi via JS -->
-            </div>
-            <div class="bg-slate-100 p-4 flex justify-end gap-2 border-t border-slate-200">
-                <button type="button" onclick="closePreviewModal()" class="bg-slate-300 hover:bg-slate-400 text-slate-800 text-xs font-bold px-5 py-2 rounded-xl transition">
+
+            <div id="previewContainer" class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6 bg-slate-50/50"></div>
+
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
+                <button onclick="closePreviewModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition">
                     Tutup Pratinjau
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- ================= 7. MODAL LIGHTBOX / ZOOM GAMBAR FULLSCREEN ================= -->
-    <div id="imageZoomModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden items-center justify-center z-50 p-4" onclick="closeZoomImage()">
-        <button class="absolute top-4 right-4 text-white text-3xl hover:text-rose-400 transition p-2">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-        <img id="zoomedImageSrc" src="" alt="Zoomed Image" class="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl border border-white/10" onclick="event.stopPropagation()">
+    <!-- MODAL EDIT SOAL SPESIFIK PER NOMOR -->
+    <div id="editQuestionModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-5 hidden transition-opacity">
+        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+            <div class="modal-header-bg p-4 text-white flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-lg">✏️</span>
+                    <div>
+                        <h3 id="editModalHeaderTitle" class="font-extrabold text-sm sm:text-base">Edit Soal No. 1</h3>
+                        <p class="text-[11px] text-emerald-200 font-light">Ubah teks pertanyaan, opsi jawaban, gambar, dan pembahasan</p>
+                    </div>
+                </div>
+                <button onclick="closeEditQuestionModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition font-bold text-lg">
+                    ✕
+                </button>
+            </div>
+
+            <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Teks Pertanyaan (Mendukung Formula KaTeX $...$)</label>
+                    <textarea id="editQText" rows="3" class="w-full p-3 rounded-xl border border-slate-200 focus:border-brand-600 outline-none custom-scrollbar font-medium"></textarea>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">URL Gambar Soal (Opsional):</label>
+                    <input type="text" id="editQImage" placeholder="https://domain.com/gambar.jpg" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:border-brand-600 outline-none font-mono">
+                    <p class="text-[10px] text-slate-400 mt-0.5">Kosongkan jika soal tidak memerlukan gambar rujukan.</p>
+                </div>
+
+                <div class="space-y-2 pt-1">
+                    <label class="block font-bold text-slate-700">Pilihan Jawaban (A - E):</label>
+                    <div class="grid grid-cols-1 gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 font-extrabold text-slate-600">A.</span>
+                            <input type="text" id="editOptA" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-brand-600">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 font-extrabold text-slate-600">B.</span>
+                            <input type="text" id="editOptB" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-brand-600">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 font-extrabold text-slate-600">C.</span>
+                            <input type="text" id="editOptC" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-brand-600">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 font-extrabold text-slate-600">D.</span>
+                            <input type="text" id="editOptD" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-brand-600">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 font-extrabold text-slate-600">E.</span>
+                            <input type="text" id="editOptE" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs outline-none focus:border-brand-600">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-1">
+                    <label class="block font-bold text-slate-700 mb-1">Kunci Jawaban Benar:</label>
+                    <select id="editCorrectKey" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-bold text-brand-700 outline-none">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                        <option value="E">E</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Pembahasan / Penjelasan Jawaban:</label>
+                    <textarea id="editQExplanation" rows="2" class="w-full p-3 rounded-xl border border-slate-200 focus:border-brand-600 outline-none custom-scrollbar font-medium"></textarea>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+                <button onclick="closeEditQuestionModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition">
+                    Batal
+                </button>
+                <button onclick="saveSingleQuestionEdit()" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition shadow-sm">
+                    💾 Simpan Perubahan Soal
+                </button>
+            </div>
+        </div>
     </div>
 
-    <!-- Footer Hak Cipta -->
-    <footer class="text-center py-3 text-[11px] text-slate-400 no-print">
-        CBT Examination System &copy; 2026 - Didukung oleh Integrasi Gemini AI
-    </footer>
-
-    <!-- ================= JAVASCRIPT CBT ENGINE ================= -->
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        const STORAGE_KEY = 'cbt_gemini_app_data_v3';
-        const DEFAULT_API_KEY_PRESET = 'AQ.Ab8RN6IuZ_eGuhXG_hYka1gNUAj_08bXaC2fGkfEdmyausZUkg';
-
-        // Bank Soal Default (Demo - Sudah termasuk Contoh Soal Bergambar Medis)
-        const DEFAULT_PACKAGES = [
+        let samplePackages = [
             {
-                id: 'pkg-demo-1',
-                title: 'Simulasi Umum CBT (Sains & Medis)',
-                duration: 15,
+                id: 'pkg-179206',
+                title: 'Paket Soal Baru Gemini',
+                duration: 30,
                 questions: [
                     {
-                        question: "Seorang laki-laki berusia 45 tahun ditemukan memiliki nodul tiroid secara tidak sengaja saat pemeriksaan kesehatan rutin. Pasien tidak memiliki keluhan sistemik. Pemeriksaan ultrasonografi (USG) menunjukkan nodul solid hipoekoik dengan margin yang tidak teratur dan ditemukan adanya mikrokalsifikasi di dalamnya. Berdasarkan temuan USG tersebut, bagaimana tingkat kecurigaan keganasannya?",
-                        image: "", // Bisa diisi URL gambar USG jika ada
+                        id: 1,
+                        text: 'Diketahui fungsi $f(x) = x^2 - bx + 11$. Grafik fungsi tersebut melalui tiga titik, yaitu $(1, 6)$, $(a, 3)$, dan $(a + 3, 6)$. Tentukanlah nilai $ab$.',
+                        image: '',
                         options: [
-                            "Benign (<1%)",
-                            "Very Low Suspicion (<3%)",
-                            "Low Suspicion (5-10%)",
-                            "Intermediate Suspicion (10-20%)",
-                            "High Suspicion (>70-90%)"
+                            { key: 'A', text: '-12' },
+                            { key: 'B', text: '-6' },
+                            { key: 'C', text: '6' },
+                            { key: 'D', text: '12' },
+                            { key: 'E', text: '18' }
                         ],
-                        answer: 4,
-                        explanation: "Berdasarkan pedoman ATA (American Thyroid Association) / TIRADS, nodul tiroid padat (solid) hipoekoik dengan salah satu fitur risiko tinggi seperti mikrokalsifikasi, margin tidak teratur, atau lebih tinggi dari lebar (taller-than-wide) dikategorikan sebagai High Suspicion dengan risiko keganasan 70-90%."
+                        correct: 'D',
+                        explanation: 'Substitusi titik $(1,6)$ ke fungsi diperoleh $1 - b + 11 = 6 \\Rightarrow b = 6$. Sumbu simetri $x = \\frac{b}{2} = 3$. Titik $(a, 3)$ dan $(a+3, 6)$ berada simetris sehingga $a = 1 \\Rightarrow ab = 1 \\times 6 = 6$.'
                     },
                     {
-                        question: "Manakah planet dalam tata surya kita yang paling dekat dengan Matahari?",
-                        image: "",
-                        options: ["Venus", "Bumi", "Merkurius", "Mars", "Jupiter"],
-                        answer: 2,
-                        explanation: "Merkurius adalah planet terdekat dari Matahari dengan jarak rata-rata sekitar 57,9 juta km."
+                        id: 2,
+                        text: 'Jika $\\int_{0}^{2} (3x^2 + 2x + k) dx = 16$, maka nilai konstanta $k$ adalah...',
+                        image: '',
+                        options: [
+                            { key: 'A', text: '1' },
+                            { key: 'B', text: '2' },
+                            { key: 'C', text: '3' },
+                            { key: 'D', text: '4' },
+                            { key: 'E', text: '5' }
+                        ],
+                        correct: 'B',
+                        explanation: '$[x^3 + x^2 + kx]_0^2 = 16 \\Rightarrow (8 + 4 + 2k) - 0 = 16 \\Rightarrow 12 + 2k = 16 \\Rightarrow 2k = 4 \\Rightarrow k = 2$.'
                     },
                     {
-                        question: "Proses pembuatan makanan pada tumbuhan hijau dengan bantuan cahaya matahari dinamakan...",
-                        image: "",
-                        options: ["Respirasi", "Fotosintesis", "Transpirasi", "Osmosis", "Fermentasi"],
-                        answer: 1,
-                        explanation: "Fotosintesis merubah H2O dan CO2 menjadi Glukosa dan O2 menggunakan energi cahaya."
+                        id: 3,
+                        text: 'Sebuah kotak berisi 5 bola merah dan 3 bola putih. Jika diambil 2 bola sekaligus secara acak, peluang terambil sekurang-kurangnya 1 bola merah adalah...',
+                        image: '',
+                        options: [
+                            { key: 'A', text: '3/28' },
+                            { key: 'B', text: '15/28' },
+                            { key: 'C', text: '25/28' },
+                            { key: 'D', text: '27/28' },
+                            { key: 'E', text: '1' }
+                        ],
+                        correct: 'C',
+                        explanation: 'Peluang terambil 2 putih = $C(3,2)/C(8,2) = 3/28$. Peluang sekurang-kurangnya 1 merah = $1 - 3/28 = 25/28$.'
+                    }
+                ]
+            },
+            {
+                id: 'pkg-179180',
+                title: 'MDE - Tumor Mammae',
+                duration: 10,
+                questions: [
+                    {
+                        id: 1,
+                        text: 'Seorang wanita usia 42 tahun mengeluhkan benjolan pada payudara kanan yang terasa kenyal, dapat digerakkan, dan tidak nyeri. Diagnosis klinis yang paling mungkin adalah...',
+                        image: '',
+                        options: [
+                            { key: 'A', text: 'Fibroadenoma Mammae (FAM)' },
+                            { key: 'B', text: 'Ductal Carcinoma In Situ' },
+                            { key: 'C', text: 'Mastitis Akut' },
+                            { key: 'D', text: 'Kista Mammae' },
+                            { key: 'E', text: 'Phyllodes Tumor' }
+                        ],
+                        correct: 'A',
+                        explanation: 'Benjolan kenyal, mobile, dan tidak nyeri pada wanita usia muda/dewasa muda khas untuk FAM.'
                     }
                 ]
             }
         ];
 
-        // State Global Ujian
-        let examPackages = [];
-        let currentExam = null;
-        let currentIndex = 0;
-        let studentAnswers = {}; 
-        let doubtStatus = {};    
+        let currentUser = { nama: '', nim: '' };
+        let currentPackage = null;
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; 
+        let userDoubts = {};   
         let timerInterval = null;
         let remainingSeconds = 0;
-        let currentStudent = { name: '', id: '' };
-        let attachedFileBase64 = null;
-        let attachedFileType = null;
+        let activeBankTab = 'list';
+        let generatedAiQuestions = null;
 
-        // Inisialisasi saat Halaman Dimuat
-        window.onload = function() {
-            loadPackages();
-            renderExamSelectOptions();
-            loadSavedApiKey();
+        let activeEditPkgId = null;
+        let activeEditQuestionIdx = null;
 
-            window.addEventListener('beforeunload', function(e) {
-                if (currentExam && remainingSeconds > 0 && !document.getElementById('screen-exam').classList.contains('hidden')) {
-                    e.preventDefault();
-                    e.returnValue = '';
-                }
-            });
-        };
-
-        function zoomImage(src) {
-            if (!src) return;
-            const modal = document.getElementById('imageZoomModal');
-            const img = document.getElementById('zoomedImageSrc');
-            img.src = src;
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closeZoomImage() {
-            const modal = document.getElementById('imageZoomModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        function loadSavedApiKey() {
-            const savedKey = localStorage.getItem('cbt_gemini_api_key') || DEFAULT_API_KEY_PRESET;
-            const keyInput = document.getElementById('geminiApiKeyInput');
-            if (keyInput) keyInput.value = savedKey;
-        }
-
-        function useDefaultApiKey() {
-            const keyInput = document.getElementById('geminiApiKeyInput');
-            if (keyInput) {
-                keyInput.value = DEFAULT_API_KEY_PRESET;
-                localStorage.setItem('cbt_gemini_api_key', DEFAULT_API_KEY_PRESET);
-                alert('API Key rekomendasi berhasil diterapkan!');
+        function triggerKaTeXInElement(element) {
+            if (window.renderMathInElement && element) {
+                renderMathInElement(element, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
             }
         }
 
-        function copyDefaultApiKey() {
-            navigator.clipboard.writeText(DEFAULT_API_KEY_PRESET).then(() => {
-                alert('Key rekomendasi berhasil disalin ke clipboard!');
-            }).catch(() => {
-                alert('Gagal menyalin otomatis. Anda bisa memblok teks key dan menyalinnya secara manual.');
-            });
+        function showToast(message, iconEmoji = 'ℹ️') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+
+            toastMsg.innerText = message;
+
+            toast.classList.remove('translate-y-[-100px]', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-[-100px]', 'opacity-0', 'pointer-events-none');
+            }, 3000);
         }
 
-        function loadPackages() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                try {
-                    examPackages = JSON.parse(saved);
-                } catch(e) {
-                    examPackages = DEFAULT_PACKAGES;
-                }
-            } else {
-                examPackages = DEFAULT_PACKAGES;
-                savePackages();
-            }
+        function showScreen(screenId) {
+            document.getElementById('screenLogin').classList.add('hidden');
+            document.getElementById('screenDashboard').classList.add('hidden');
+            document.getElementById('screenCbt').classList.add('hidden');
+            document.getElementById('screenResult').classList.add('hidden');
+
+            document.getElementById(screenId).classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function savePackages() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(examPackages));
-            } catch(e) { console.error('Gagal menyimpan ke storage:', e); }
-        }
+        function handleLogin() {
+            const nama = document.getElementById('loginNama').value.trim();
+            const nim = document.getElementById('loginNim').value.trim();
 
-        function renderExamSelectOptions() {
-            const select = document.getElementById('examSelect');
-            if (!select) return;
-            select.innerHTML = '';
-            examPackages.forEach(pkg => {
-                const opt = document.createElement('option');
-                opt.value = pkg.id;
-                opt.innerText = `${pkg.title} (${pkg.questions.length} Soal - ${pkg.duration} Mnt)`;
-                select.appendChild(opt);
-            });
-
-            const badge = document.getElementById('savedPkgCountBadge');
-            if (badge) badge.innerText = examPackages.length;
-        }
-
-        // Helper untuk Membersihkan Tag Markdown pada JSON Gemini
-        function cleanJsonText(raw) {
-            if (!raw) return '';
-            let cleaned = raw.trim();
-            cleaned = cleaned.replace(/^```(?:json)?/gi, '').replace(/```$/gi, '').trim();
-            return cleaned;
-        }
-
-        // ================= INTEGRASI LANGSUNG GEMINI AI & KELOLA BANK SOAL =================
-
-        function openImporterModal(defaultTab = 'manage') {
-            document.getElementById('importerModal').classList.remove('hidden');
-            document.getElementById('importerModal').classList.add('flex');
-            switchImportTab(defaultTab);
-        }
-
-        function closeImporterModal() {
-            document.getElementById('importerModal').classList.add('hidden');
-            document.getElementById('importerModal').classList.remove('flex');
-        }
-
-        function switchImportTab(tab) {
-            const manageBtn = document.getElementById('tabManageBtn');
-            const autoBtn = document.getElementById('tabAutoBtn');
-            const manualBtn = document.getElementById('tabManualBtn');
-
-            const manageContent = document.getElementById('tabManageContent');
-            const autoContent = document.getElementById('tabAutoContent');
-            const manualContent = document.getElementById('tabManualContent');
-            const metaSection = document.getElementById('newPkgMetaSection');
-            const saveBtnFooter = document.getElementById('btnSavePackageFooter');
-
-            const inactiveClass = "flex-1 py-2 px-3 rounded-xl text-slate-600 hover:bg-white/60 flex items-center justify-center gap-2 transition";
-            const activeClass = "flex-1 py-2 px-3 rounded-xl bg-white text-indigo-700 shadow-xs border border-indigo-200 flex items-center justify-center gap-2 transition font-bold";
-
-            manageBtn.className = inactiveClass;
-            autoBtn.className = inactiveClass;
-            manualBtn.className = inactiveClass;
-
-            manageContent.classList.add('hidden');
-            autoContent.classList.add('hidden');
-            manualContent.classList.add('hidden');
-
-            if (tab === 'manage') {
-                manageBtn.className = activeClass;
-                manageContent.classList.remove('hidden');
-                metaSection.classList.add('hidden');
-                saveBtnFooter.classList.add('hidden');
-                renderSavedPackagesList();
-            } else if (tab === 'auto') {
-                autoBtn.className = activeClass;
-                autoContent.classList.remove('hidden');
-                metaSection.classList.remove('hidden');
-                saveBtnFooter.classList.remove('hidden');
-            } else {
-                manualBtn.className = activeClass;
-                manualContent.classList.remove('hidden');
-                metaSection.classList.remove('hidden');
-                saveBtnFooter.classList.remove('hidden');
-            }
-        }
-
-        // Render Katalog Paket Soal
-        function renderSavedPackagesList() {
-            const container = document.getElementById('managePackagesList');
-            container.innerHTML = '';
-
-            if (examPackages.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-2 text-center py-8 bg-slate-50 border border-dashed rounded-2xl">
-                        <i class="fa-solid fa-folder-open text-slate-300 text-3xl mb-2"></i>
-                        <p class="text-xs text-slate-500 font-medium">Belum ada paket soal tersimpan.</p>
-                    </div>
-                `;
+            if (!nama) {
+                showToast('Mohon isi nama lengkap terlebih dahulu!', '⚠️');
+                document.getElementById('loginNama').focus();
                 return;
             }
 
-            examPackages.forEach((pkg) => {
-                const card = document.createElement('div');
-                card.className = "bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs hover:shadow-sm transition flex flex-col justify-between gap-3";
+            currentUser = { nama, nim };
 
+            document.getElementById('dashboardUserNama').innerText = nama;
+            document.getElementById('dashboardUserNim').innerText = nim ? `NIM: ${nim}` : 'Peserta Umum';
+
+            renderDashboardCards();
+            showScreen('screenDashboard');
+            showToast(`Selamat datang, ${nama}!`, '✅');
+        }
+
+        function handleLogout() {
+            currentUser = { nama: '', nim: '' };
+            document.getElementById('loginNama').value = '';
+            document.getElementById('loginNim').value = '';
+            showScreen('screenLogin');
+            showToast('Anda telah logout', '🚪');
+        }
+
+        function renderDashboardCards() {
+            const grid = document.getElementById('quizGrid');
+            grid.innerHTML = '';
+
+            samplePackages.forEach((pkg) => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between gap-4";
+                
                 card.innerHTML = `
                     <div>
-                        <div class="flex justify-between items-start gap-2 mb-1.5">
-                            <h4 class="font-bold text-xs sm:text-sm text-slate-800 line-clamp-1">${escapeAndFormatHTML(pkg.title)}</h4>
-                            <span class="text-[10px] font-extrabold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-lg border border-indigo-100 shrink-0">${pkg.questions.length} Soal</span>
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <h3 class="font-extrabold text-slate-800 text-lg leading-snug">${pkg.title}</h3>
+                            <span class="bg-emerald-50 text-emerald-700 font-extrabold text-xs px-3 py-1 rounded-full border border-emerald-100 whitespace-nowrap">
+                                ${pkg.questions.length} Soal
+                            </span>
                         </div>
-                        <div class="flex items-center gap-3 text-[11px] text-slate-500 font-medium">
-                            <span><i class="fa-regular fa-clock text-slate-400 mr-1"></i>${pkg.duration} Menit</span>
+                        <div class="flex items-center gap-4 text-xs text-slate-500 font-medium">
+                            <span>⏱️ ${pkg.duration} Menit</span>
                             <span>•</span>
-                            <span><i class="fa-solid fa-hashtag text-slate-400 mr-1"></i>ID: ${pkg.id.substring(0, 10)}</span>
+                            <span># ID: ${pkg.id}</span>
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center justify-between gap-1.5 pt-2 border-t border-slate-100">
-                        <div class="flex items-center gap-1">
-                            <button type="button" onclick="selectPackageForExam('${pkg.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow-2xs">
-                                <i class="fa-solid fa-play text-[10px]"></i> Pilih Ujian
+                    <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <button onclick="startExam('${pkg.id}')" class="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                ▶ Pilih Ujian
                             </button>
-                            <button type="button" onclick="previewPackage('${pkg.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition flex items-center gap-1" title="Lihat Isi Soal & Kunci Jawaban">
-                                <i class="fa-solid fa-eye text-slate-500"></i> Pratinjau
+                            <button onclick="openPreviewModal('${pkg.id}')" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                                👁 Pratinjau
                             </button>
                         </div>
-                        <div class="flex items-center gap-1">
-                            <button type="button" onclick="exportSinglePackage('${pkg.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition" title="Unduh File JSON Backup">
-                                <i class="fa-solid fa-download"></i>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="downloadExam('${pkg.id}')" title="Unduh Paket" class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center text-xs transition border border-emerald-100">
+                                📥
                             </button>
-                            <button type="button" onclick="deletePackage('${pkg.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition" title="Hapus Paket Soal Ini">
-                                <i class="fa-solid fa-trash-can"></i>
+                            <button onclick="deleteExam('${pkg.id}')" title="Hapus Paket" class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center text-xs transition border border-rose-100">
+                                🗑
                             </button>
                         </div>
                     </div>
                 `;
-
-                container.appendChild(card);
+                grid.appendChild(card);
             });
+
+            document.getElementById('modalBankCount').innerText = samplePackages.length;
         }
 
-        function selectPackageForExam(pkgId) {
-            const select = document.getElementById('examSelect');
-            select.value = pkgId;
-            closeImporterModal();
-        }
-
-        function previewPackage(pkgId) {
-            const pkg = examPackages.find(p => p.id === pkgId);
+        function openPreviewModal(pkgId) {
+            const pkg = samplePackages.find(p => p.id === pkgId);
             if (!pkg) return;
 
-            document.getElementById('previewModalTitle').innerText = pkg.title;
-            document.getElementById('previewModalSubtitle').innerText = `${pkg.questions.length} Pertanyaan • Durasi ${pkg.duration} Menit`;
+            activeEditPkgId = pkgId;
 
-            const body = document.getElementById('previewModalBody');
-            body.innerHTML = '';
-            const letters = ['A', 'B', 'C', 'D', 'E'];
+            document.getElementById('previewTitle').innerText = pkg.title;
+            document.getElementById('previewSubtitle').innerText = `${pkg.questions.length} Pertanyaan • Durasi ${pkg.duration} Menit • ID: ${pkg.id}`;
+
+            const container = document.getElementById('previewContainer');
+            container.innerHTML = '';
 
             pkg.questions.forEach((q, idx) => {
-                const item = document.createElement('div');
-                item.className = "bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2 text-xs sm:text-sm";
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm space-y-4 relative";
 
-                let optionsHTML = '';
-                q.options.forEach((opt, oIdx) => {
-                    const isCorrect = (oIdx === q.answer);
-                    optionsHTML += `
-                        <div class="p-2 rounded-xl text-xs font-medium border flex items-center justify-between ${
-                            isCorrect ? 'bg-emerald-100/70 border-emerald-300 text-emerald-950 font-bold' : 'bg-white border-slate-200 text-slate-700'
+                let optionsHtml = '';
+                q.options.forEach((opt) => {
+                    const isCorrect = opt.key === q.correct;
+                    optionsHtml += `
+                        <div class="p-3 rounded-xl border text-xs font-medium flex items-center justify-between gap-3 ${
+                            isCorrect 
+                                ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950 font-semibold' 
+                                : 'bg-slate-50 border-slate-200 text-slate-700'
                         }">
-                            <span><strong>${letters[oIdx]}.</strong> ${escapeAndFormatHTML(opt)}</span>
-                            ${isCorrect ? '<span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-md"><i class="fa-solid fa-check"></i> Kunci</span>' : ''}
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-lg flex items-center justify-center font-extrabold text-[11px] ${
+                                    isCorrect ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-600'
+                                }">${opt.key}</span>
+                                <span>${opt.text}</span>
+                            </div>
+                            ${isCorrect ? '<span class="bg-brand-600 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md shadow-sm">✔ Kunci</span>' : ''}
                         </div>
                     `;
                 });
 
-                let imagePreviewHTML = '';
+                let imageHtml = '';
                 if (q.image) {
-                    imagePreviewHTML = `
-                        <div class="my-2 text-center bg-white p-2 rounded-xl border border-slate-200">
-                            <img src="${q.image}" class="max-h-48 mx-auto rounded-lg object-contain cursor-pointer hover:opacity-90" onclick="zoomImage(this.src)">
+                    imageHtml = `<div class="my-3"><img src="${q.image}" alt="Gambar Soal" class="max-h-56 rounded-xl border border-slate-200 object-contain mx-auto"></div>`;
+                }
+
+                let explanationHtml = '';
+                if (q.explanation) {
+                    explanationHtml = `
+                        <div class="p-3.5 bg-emerald-50/70 border border-emerald-100 rounded-xl text-xs text-emerald-900 leading-relaxed mt-3">
+                            <span class="font-extrabold block mb-1 text-brand-950">💡 Pembahasan:</span>
+                            ${q.explanation}
                         </div>
                     `;
                 }
 
-                item.innerHTML = `
-                    <div class="font-bold text-slate-800 flex items-center justify-between">
-                        <span>Soal No. ${idx + 1}</span>
+                card.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <span class="bg-brand-50 text-brand-800 font-extrabold text-xs px-3 py-1 rounded-lg border border-brand-100">Soal No. ${idx + 1}</span>
+                        <button onclick="openEditQuestionModal('${pkgId}', ${idx})" class="px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                            ✏️ Edit Soal
+                        </button>
                     </div>
-                    <div class="text-slate-900 leading-relaxed font-medium mb-2">${escapeAndFormatHTML(q.question)}</div>
-                    ${imagePreviewHTML}
-                    <div class="space-y-1.5">${optionsHTML}</div>
-                    ${q.explanation ? `<div class="text-xs text-indigo-900 bg-indigo-50/80 p-2.5 rounded-xl border border-indigo-100 italic mt-2"><strong class="font-bold">Pembahasan:</strong> ${escapeAndFormatHTML(q.explanation)}</div>` : ''}
+                    <div class="text-xs sm:text-sm font-medium text-slate-800 leading-relaxed">${q.text}</div>
+                    ${imageHtml}
+                    <div class="space-y-2 pt-1">${optionsHtml}</div>
+                    ${explanationHtml}
                 `;
 
-                body.appendChild(item);
+                container.appendChild(card);
             });
 
             document.getElementById('previewModal').classList.remove('hidden');
-            document.getElementById('previewModal').classList.add('flex');
+            triggerKaTeXInElement(container);
         }
 
         function closePreviewModal() {
             document.getElementById('previewModal').classList.add('hidden');
-            document.getElementById('previewModal').classList.remove('flex');
         }
 
-        function exportSinglePackage(pkgId) {
-            const pkg = examPackages.find(p => p.id === pkgId);
+        function openEditQuestionModal(pkgId, qIndex) {
+            const pkg = samplePackages.find(p => p.id === pkgId);
+            if (!pkg || !pkg.questions[qIndex]) return;
+
+            activeEditPkgId = pkgId;
+            activeEditQuestionIdx = qIndex;
+
+            const q = pkg.questions[qIndex];
+
+            document.getElementById('editModalHeaderTitle').innerText = `Edit Soal No. ${qIndex + 1} (${pkg.title})`;
+            document.getElementById('editQText').value = q.text || '';
+            document.getElementById('editQImage').value = q.image || '';
+
+            const getOpt = (key) => q.options.find(o => o.key === key)?.text || '';
+            document.getElementById('editOptA').value = getOpt('A');
+            document.getElementById('editOptB').value = getOpt('B');
+            document.getElementById('editOptC').value = getOpt('C');
+            document.getElementById('editOptD').value = getOpt('D');
+            document.getElementById('editOptE').value = getOpt('E');
+
+            document.getElementById('editCorrectKey').value = q.correct || 'A';
+            document.getElementById('editQExplanation').value = q.explanation || '';
+
+            document.getElementById('editQuestionModal').classList.remove('hidden');
+        }
+
+        function closeEditQuestionModal() {
+            document.getElementById('editQuestionModal').classList.add('hidden');
+        }
+
+        function saveSingleQuestionEdit() {
+            if (!activeEditPkgId || activeEditQuestionIdx === null) return;
+
+            const pkg = samplePackages.find(p => p.id === activeEditPkgId);
             if (!pkg) return;
 
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(pkg, null, 2));
-            const dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `BankSoal_${pkg.title.replace(/[^a-zA-Z0-9]/g, '_')}.json`);
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
-        }
-
-        function exportAllPackages() {
-            if (examPackages.length === 0) return;
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(examPackages, null, 2));
-            const dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `Semua_BankSoal_CBT_${Date.now()}.json`);
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
-        }
-
-        function importPackageFromFile(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const rawJson = cleanJsonText(evt.target.result);
-                    const parsed = JSON.parse(rawJson);
-                    if (Array.isArray(parsed)) {
-                        parsed.forEach(pkg => {
-                            if (pkg.title && Array.isArray(pkg.questions)) {
-                                pkg.id = 'pkg-' + Date.now() + Math.floor(Math.random()*1000);
-                                examPackages.unshift(pkg);
-                            }
-                        });
-                    } else if (parsed.title && Array.isArray(parsed.questions)) {
-                        parsed.id = 'pkg-' + Date.now();
-                        examPackages.unshift(parsed);
-                    } else {
-                        throw new Error("Format berkas JSON tidak sesuai.");
-                    }
-
-                    savePackages();
-                    renderExamSelectOptions();
-                    renderSavedPackagesList();
-                    alert('Bank soal dari berkas eksternal berhasil diimpor!');
-                } catch(err) {
-                    alert('Gagal memuat file JSON: ' + err.message);
-                }
-            };
-            reader.readAsText(file);
-            e.target.value = ''; // Reset input file
-        }
-
-        function deletePackage(pkgId) {
-            if (confirm('Apakah Anda yakin ingin menghapus paket soal ini?')) {
-                examPackages = examPackages.filter(p => p.id !== pkgId);
-                savePackages();
-                renderExamSelectOptions();
-                renderSavedPackagesList();
-            }
-        }
-
-        // ================= LOGIKA UTAMA UJIAN =================
-
-        function handleStartExam(e) {
-            e.preventDefault();
-            const name = document.getElementById('studentName').value.trim();
-            const id = document.getElementById('studentId').value.trim();
-            const selectedPkgId = document.getElementById('examSelect').value;
-
-            currentExam = examPackages.find(p => p.id === selectedPkgId);
-            if (!currentExam || !currentExam.questions.length) {
-                alert('Paket soal tidak ditemukan atau tidak memiliki pertanyaan.');
+            const qText = document.getElementById('editQText').value.trim();
+            if (!qText) {
+                showToast('Teks pertanyaan tidak boleh kosong!', '⚠️');
                 return;
             }
 
-            currentStudent = { name, id };
-            studentAnswers = {};
-            doubtStatus = {};
-            currentIndex = 0;
-            remainingSeconds = (currentExam.duration || 30) * 60;
+            const updatedOptions = [
+                { key: 'A', text: document.getElementById('editOptA').value.trim() },
+                { key: 'B', text: document.getElementById('editOptB').value.trim() },
+                { key: 'C', text: document.getElementById('editOptC').value.trim() },
+                { key: 'D', text: document.getElementById('editOptD').value.trim() },
+                { key: 'E', text: document.getElementById('editOptE').value.trim() }
+            ];
 
-            document.getElementById('screen-login').classList.add('hidden');
-            document.getElementById('screen-exam').classList.remove('hidden');
-            document.getElementById('screen-exam').classList.add('flex');
+            pkg.questions[activeEditQuestionIdx] = {
+                id: activeEditQuestionIdx + 1,
+                text: qText,
+                image: document.getElementById('editQImage').value.trim(),
+                options: updatedOptions,
+                correct: document.getElementById('editCorrectKey').value,
+                explanation: document.getElementById('editQExplanation').value.trim()
+            };
 
-            document.getElementById('examHeaderTitle').innerText = currentExam.title;
-            document.getElementById('examHeaderStudent').innerText = `Peserta: ${name} (${id})`;
+            closeEditQuestionModal();
+            openPreviewModal(activeEditPkgId);
+            renderDashboardCards();
+            showToast(`Soal No. ${activeEditQuestionIdx + 1} berhasil diperbarui!`, '✅');
+        }
 
+        function downloadExam(pkgId) {
+            const pkg = samplePackages.find(p => p.id === pkgId);
+            if (!pkg) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(pkg, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `${pkg.title.replace(/\s+/g, '_')}_${pkg.id}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast(`Mengunduh file JSON paket: ${pkg.title}`, '📥');
+        }
+
+        function deleteExam(pkgId) {
+            samplePackages = samplePackages.filter(p => p.id !== pkgId);
+            renderDashboardCards();
+            renderModalBankList();
+            showToast('Paket soal berhasil dihapus', '🗑');
+        }
+
+        function startExam(pkgId) {
+            const pkg = samplePackages.find(p => p.id === pkgId);
+            if (!pkg) return;
+
+            currentPackage = pkg;
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            userDoubts = {};
+
+            document.getElementById('examTitle').innerText = pkg.title;
+            document.getElementById('examParticipant').innerText = `Peserta: ${currentUser.nama || 'Peserta'} ${currentUser.nim ? `(${currentUser.nim})` : ''}`;
+
+            remainingSeconds = pkg.duration * 60;
             startTimer();
+
+            showScreen('screenCbt');
             renderQuestion();
-            renderQuestionGrid();
+            renderPalette();
+            showToast(`Ujian Dimulai. Durasi: ${pkg.duration} Menit`, '▶');
         }
 
         function startTimer() {
-            clearInterval(timerInterval);
-            updateTimerUI();
-
+            if (timerInterval) clearInterval(timerInterval);
+            updateTimerDisplay();
             timerInterval = setInterval(() => {
                 remainingSeconds--;
-                updateTimerUI();
+                updateTimerDisplay();
 
                 if (remainingSeconds <= 0) {
                     clearInterval(timerInterval);
-                    alert('Waktu Ujian Telah Habis! Jawaban Anda otomatis dikumpulkan.');
-                    finishExam();
+                    showToast('Waktu Ujian telah habis!', '⏱️');
+                    executeFinishExam();
                 }
             }, 1000);
         }
 
-        function updateTimerUI() {
-            const h = Math.floor(remainingSeconds / 3600).toString().padStart(2, '0');
-            const m = Math.floor((remainingSeconds % 3600) / 60).toString().padStart(2, '0');
-            const s = (remainingSeconds % 60).toString().padStart(2, '0');
-            document.getElementById('timerDisplay').innerText = `${h}:${m}:${s}`;
+        function updateTimerDisplay() {
+            const hours = Math.floor(remainingSeconds / 3600);
+            const minutes = Math.floor((remainingSeconds % 3600) / 60);
+            const seconds = remainingSeconds % 60;
+            const pad = (num) => String(num).padStart(2, '0');
+            document.getElementById('examTimer').innerText = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
         }
 
         function renderQuestion() {
-            const q = currentExam.questions[currentIndex];
-            const letters = ['A', 'B', 'C', 'D', 'E'];
+            if (!currentPackage) return;
+            const q = currentPackage.questions[currentQuestionIndex];
+            
+            document.getElementById('questionBadge').innerText = `Soal No. ${currentQuestionIndex + 1} dari ${currentPackage.questions.length}`;
+            document.getElementById('chkDoubt').checked = !!userDoubts[q.id];
 
-            document.getElementById('currentQuestionNumber').innerText = currentIndex + 1;
-            document.getElementById('questionText').innerHTML = escapeAndFormatHTML(q.question);
-            document.getElementById('doubtCheckbox').checked = !!doubtStatus[currentIndex];
+            document.getElementById('questionText').innerHTML = q.text;
 
-            // Penanganan Gambar Soal (Rapi & Responsif)
             const imgContainer = document.getElementById('questionImageContainer');
             const imgEl = document.getElementById('questionImage');
-
-            if (q.image && q.image.trim() !== "") {
+            if (q.image) {
                 imgEl.src = q.image;
                 imgContainer.classList.remove('hidden');
-                // Sembunyikan jika gambar gagal dimuat (broken link)
-                imgEl.onerror = function() {
-                    imgContainer.classList.add('hidden');
-                };
             } else {
                 imgContainer.classList.add('hidden');
-                imgEl.src = "";
             }
 
-            const container = document.getElementById('optionsContainer');
-            container.innerHTML = '';
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
 
-            q.options.forEach((optText, optIdx) => {
-                const isSelected = studentAnswers[currentIndex] === optIdx;
-                const letter = letters[optIdx] || String.fromCharCode(65 + optIdx);
-
-                const div = document.createElement('div');
-                div.className = `flex items-center gap-3 p-3.5 sm:p-4 rounded-xl border-2 transition cursor-pointer select-none ${
+            q.options.forEach((opt) => {
+                const isSelected = userAnswers[q.id] === opt.key;
+                const optionBtn = document.createElement('div');
+                
+                optionBtn.onclick = () => selectAnswer(q.id, opt.key);
+                optionBtn.className = `p-4 rounded-2xl border transition cursor-pointer flex items-center gap-3.5 select-none ${
                     isSelected 
-                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-950 font-semibold shadow-xs' 
-                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                        ? 'bg-emerald-50/80 border-brand-600 shadow-sm text-emerald-950 font-semibold' 
+                        : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
                 }`;
 
-                div.onclick = () => selectOption(optIdx);
-
-                div.innerHTML = `
-                    <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
-                        isSelected ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 border'
+                optionBtn.innerHTML = `
+                    <div class="w-8 h-8 rounded-xl flex items-center justify-center font-extrabold text-xs transition ${
+                        isSelected 
+                            ? 'bg-brand-600 text-white shadow-sm' 
+                            : 'bg-slate-100 text-slate-600'
                     }">
-                        ${letter}
+                        ${opt.key}
                     </div>
-                    <div class="text-xs sm:text-sm leading-relaxed">${escapeAndFormatHTML(optText)}</div>
+                    <div class="flex-1 text-sm font-medium">${opt.text}</div>
                 `;
 
-                container.appendChild(div);
+                optionsContainer.appendChild(optionBtn);
             });
 
-            document.getElementById('btnPrev').disabled = (currentIndex === 0);
-            document.getElementById('btnPrev').classList.toggle('opacity-50', currentIndex === 0);
+            triggerKaTeXInElement(document.getElementById('questionText'));
+            triggerKaTeXInElement(optionsContainer);
 
-            const isLast = (currentIndex === currentExam.questions.length - 1);
-            const btnNextText = document.getElementById('btnNextText');
-            const btnNextIcon = document.getElementById('btnNextIcon');
-            const btnNext = document.getElementById('btnNext');
-
-            if (isLast) {
-                btnNextText.innerText = 'Selesai & Kumpulkan';
-                btnNextIcon.className = 'fa-solid fa-flag-checkered';
-                btnNext.onclick = openFinishModal;
+            document.getElementById('btnPrev').disabled = currentQuestionIndex === 0;
+            if (currentQuestionIndex === currentPackage.questions.length - 1) {
+                document.getElementById('btnNext').onclick = openConfirmModal;
+                document.getElementById('btnNext').innerHTML = 'Selesai & Kumpulkan 🏁';
             } else {
-                btnNextText.innerText = 'Selanjutnya';
-                btnNextIcon.className = 'fa-solid fa-chevron-right';
-                btnNext.onclick = () => navigateQuestion(1);
+                document.getElementById('btnNext').onclick = () => navigateQuestion(1);
+                document.getElementById('btnNext').innerHTML = 'Selanjutnya ➡️';
             }
-
-            renderQuestionGrid();
         }
 
-        function selectOption(optIdx) {
-            studentAnswers[currentIndex] = optIdx;
+        function selectAnswer(questionId, optionKey) {
+            userAnswers[questionId] = optionKey;
             renderQuestion();
+            renderPalette();
         }
 
-        function toggleDoubtStatus() {
-            doubtStatus[currentIndex] = document.getElementById('doubtCheckbox').checked;
-            renderQuestionGrid();
+        function toggleDoubt() {
+            const q = currentPackage.questions[currentQuestionIndex];
+            userDoubts[q.id] = document.getElementById('chkDoubt').checked;
+            renderPalette();
         }
 
         function navigateQuestion(direction) {
-            const target = currentIndex + direction;
-            if (target >= 0 && target < currentExam.questions.length) {
-                currentIndex = target;
+            const newIndex = currentQuestionIndex + direction;
+            if (newIndex >= 0 && newIndex < currentPackage.questions.length) {
+                currentQuestionIndex = newIndex;
                 renderQuestion();
+                renderPalette();
             }
         }
 
-        function jumpToQuestion(idx) {
-            currentIndex = idx;
-            renderQuestion();
-        }
+        function renderPalette() {
+            if (!currentPackage) return;
 
-        function renderQuestionGrid() {
-            const grid = document.getElementById('questionGrid');
-            grid.innerHTML = '';
+            const palette = document.getElementById('numberPalette');
+            palette.innerHTML = '';
+            let answeredCounter = 0;
 
-            let answeredCount = 0;
+            currentPackage.questions.forEach((q, idx) => {
+                const isAnswered = !!userAnswers[q.id];
+                const isDoubt = !!userDoubts[q.id];
+                const isCurrent = idx === currentQuestionIndex;
 
-            currentExam.questions.forEach((_, idx) => {
-                const hasAnswer = (studentAnswers[idx] !== undefined);
-                const isDoubt = !!doubtStatus[idx];
-                const isCurrent = (idx === currentIndex);
+                if (isAnswered) answeredCounter++;
 
-                if (hasAnswer) answeredCount++;
-
-                let bgClass = 'bg-slate-100 text-slate-700 border-slate-200';
-
+                let bgClass = "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200";
                 if (isDoubt) {
-                    bgClass = 'bg-amber-400 text-amber-950 font-bold border-amber-500';
-                } else if (hasAnswer) {
-                    bgClass = 'bg-emerald-500 text-white font-bold border-emerald-600';
+                    bgClass = "bg-amber-400 text-slate-900 border-amber-500 font-bold";
+                } else if (isAnswered) {
+                    bgClass = "bg-emerald-600 text-white border-emerald-700 font-bold";
                 }
 
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.onclick = () => jumpToQuestion(idx);
-                btn.className = `h-10 rounded-xl text-xs font-bold border transition relative flex items-center justify-center ${bgClass} ${
-                    isCurrent ? 'ring-3 ring-indigo-500 ring-offset-1 scale-105 z-10 shadow-sm' : 'hover:opacity-90'
-                }`;
+                const numBtn = document.createElement('button');
+                numBtn.onclick = () => {
+                    currentQuestionIndex = idx;
+                    renderQuestion();
+                    renderPalette();
+                };
 
-                btn.innerText = idx + 1;
-                grid.appendChild(btn);
+                numBtn.className = `h-10 rounded-xl border text-xs font-bold transition flex items-center justify-center ${bgClass} ${
+                    isCurrent ? 'ring-2 ring-brand-600 ring-offset-2' : ''
+                }`;
+                numBtn.innerText = idx + 1;
+
+                palette.appendChild(numBtn);
             });
 
-            document.getElementById('answeredBadge').innerText = `${answeredCount} / ${currentExam.questions.length} Terjawab`;
+            document.getElementById('answeredCount').innerText = `${answeredCounter} / ${currentPackage.questions.length} Terjawab`;
         }
 
-        // ================= MODAL KONFIRMASI & REKAP HASIL =================
+        function openConfirmModal() {
+            if (!currentPackage) return;
 
-        function openFinishModal() {
-            const total = currentExam.questions.length;
-            const answered = Object.keys(studentAnswers).length;
-            let doubt = 0;
-            Object.keys(doubtStatus).forEach(k => { if (doubtStatus[k]) doubt++; });
-            const unanswered = total - answered;
+            let answeredCount = 0;
+            let doubtCount = 0;
 
-            document.getElementById('modalAnsweredCount').innerText = `${answered} / ${total} Soal`;
-            document.getElementById('modalDoubtCount').innerText = `${doubt} Soal`;
-            document.getElementById('modalUnansweredCount').innerText = `${unanswered} Soal`;
+            currentPackage.questions.forEach((q) => {
+                if (userAnswers[q.id]) answeredCount++;
+                if (userDoubts[q.id]) doubtCount++;
+            });
 
-            const warningBox = document.getElementById('warningUnansweredText');
-            if (unanswered > 0 || doubt > 0) {
-                warningBox.classList.remove('hidden');
+            const total = currentPackage.questions.length;
+            const unansweredCount = total - answeredCount;
+
+            document.getElementById('modalAnsweredCount').innerText = `${answeredCount} / ${total} Soal`;
+            document.getElementById('modalDoubtCount').innerText = `${doubtCount} Soal`;
+            document.getElementById('modalUnansweredCount').innerText = `${unansweredCount} Soal`;
+
+            document.getElementById('confirmSubmitModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmSubmitModal').classList.add('hidden');
+        }
+
+        function executeFinishExam() {
+            closeConfirmModal();
+            if (timerInterval) clearInterval(timerInterval);
+
+            showExamResultView();
+        }
+
+        function retryCurrentExam() {
+            if (currentPackage) {
+                startExam(currentPackage.id);
             } else {
-                warningBox.classList.add('hidden');
+                showScreen('screenDashboard');
             }
-
-            const modal = document.getElementById('finishModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
         }
 
-        function closeFinishModal() {
-            const modal = document.getElementById('finishModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        function finishExam() {
-            closeFinishModal();
-            clearInterval(timerInterval);
+        function showExamResultView() {
+            if (!currentPackage) return;
 
             let correctCount = 0;
-            currentExam.questions.forEach((q, idx) => {
-                if (studentAnswers[idx] !== undefined && studentAnswers[idx] === q.answer) {
+            const total = currentPackage.questions.length;
+
+            currentPackage.questions.forEach((q) => {
+                if (userAnswers[q.id] === q.correct) {
                     correctCount++;
                 }
             });
 
-            const total = currentExam.questions.length;
-            const wrongCount = total - correctCount;
             const score = Math.round((correctCount / total) * 100);
+            const wrongCount = total - correctCount;
 
-            document.getElementById('resStudentName').innerText = currentStudent.name || 'Peserta';
-            document.getElementById('resStudentId').innerText = currentStudent.id || '-';
-            document.getElementById('resExamTitle').innerText = currentExam.title;
-            document.getElementById('resTimestamp').innerText = new Date().toLocaleString('id-ID');
+            document.getElementById('resNama').innerText = currentUser.nama || 'Peserta';
+            document.getElementById('resNim').innerText = currentUser.nim ? currentUser.nim : '-';
+            document.getElementById('resPackageTitle').innerText = currentPackage.title;
+            
+            const now = new Date();
+            document.getElementById('resDate').innerText = `${now.toLocaleDateString('id-ID')}, ${now.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}`;
 
             document.getElementById('resScore').innerText = score;
             document.getElementById('resCorrect').innerText = `${correctCount} / ${total}`;
             document.getElementById('resWrong').innerText = `${wrongCount} Soal`;
 
-            let feedback = '';
-            if (score >= 85) {
-                feedback = `Sangat Luar Biasa! Anda menguasai materi (${score}%) dengan sangat akurat. Pertahankan pemahaman Anda!`;
-            } else if (score >= 70) {
-                feedback = `Bagus! Hasil Anda cukup memuaskan (${score}%). Pelajari kembali soal-soal yang salah pada pembahasan di bawah.`;
+            let feedbackText = '';
+            if (score >= 80) {
+                feedbackText = `Luar Biasa! Hasil nilai Anda sangat baik (${score}%). Anda telah menguasai sebagian besar materi pada paket soal ini. Tetap pertahankan prestasi belajar Anda!`;
+            } else if (score >= 60) {
+                feedbackText = `Cukup Baik! Nilai Anda (${score}%). Sudah memenuhi batas minimal, tetapi disarankan untuk meninjau kembali beberapa soal yang masih salah.`;
             } else {
-                feedback = `Perlu Ditingkatkan! Hasil nilai Anda (${score}%). Sebaiknya ulangi ujian dan tinjau pembahasan materi secara mendalam.`;
+                feedbackText = `Perlu Ditingkatkan! Hasil nilai Anda (${score}%). Sebaiknya ulangi pengerjaan ujian dan pelajari detail pembahasan materi per nomor di bawah ini secara mendalam.`;
             }
-            document.getElementById('feedbackText').innerText = feedback;
+            document.getElementById('resFeedback').innerText = feedbackText;
 
-            renderReviewSection();
+            const reviewContainer = document.getElementById('reviewContainer');
+            reviewContainer.innerHTML = '';
 
-            document.getElementById('screen-exam').classList.add('hidden');
-            document.getElementById('screen-exam').classList.remove('flex');
-            document.getElementById('screen-result').classList.remove('hidden');
-            document.getElementById('screen-result').classList.add('flex');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+            currentPackage.questions.forEach((q, idx) => {
+                const userAnsKey = userAnswers[q.id] || null;
+                const isCorrect = userAnsKey === q.correct;
 
-        function renderReviewSection() {
-            const container = document.getElementById('reviewContainer');
-            container.innerHTML = '';
-            const letters = ['A', 'B', 'C', 'D', 'E'];
+                const card = document.createElement('div');
+                card.className = `bg-white rounded-2xl p-5 border shadow-sm space-y-4 ${
+                    isCorrect ? 'border-emerald-200 bg-emerald-50/20' : 'border-rose-200 bg-rose-50/20'
+                }`;
 
-            currentExam.questions.forEach((q, idx) => {
-                const userAns = studentAnswers[idx];
-                const isCorrect = userAns === q.answer;
+                const userOptText = q.options.find(o => o.key === userAnsKey)?.text || 'Tidak Dijawab';
+                const correctOptText = q.options.find(o => o.key === q.correct)?.text || '';
 
-                const item = document.createElement('div');
-                item.className = `p-4 rounded-2xl border ${isCorrect ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'}`;
+                let imageHtml = '';
+                if (q.image) {
+                    imageHtml = `<div class="my-3"><img src="${q.image}" alt="Gambar Soal" class="max-h-56 rounded-xl border border-slate-200 object-contain mx-auto"></div>`;
+                }
 
-                let statusBadge = isCorrect 
-                    ? `<span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-lg"><i class="fa-solid fa-check mr-1"></i> Benar (+${Math.round(100/currentExam.questions.length)})</span>`
-                    : `<span class="text-xs bg-rose-100 text-rose-800 font-bold px-2.5 py-1 rounded-lg"><i class="fa-solid fa-xmark mr-1"></i> Salah / Kosong</span>`;
-
-                let userAnsText = userAns !== undefined ? `${letters[userAns]}. ${q.options[userAns]}` : '<em class="text-slate-400">Tidak Dijawab</em>';
-                let keyAnsText = `${letters[q.answer]}. ${q.options[q.answer]}`;
-
-                let reviewImageHTML = '';
-                if (q.image && q.image.trim() !== '') {
-                    reviewImageHTML = `
-                        <div class="my-2 bg-white p-2 rounded-xl border border-slate-200 text-center">
-                            <img src="${q.image}" class="max-h-48 mx-auto rounded-lg object-contain cursor-pointer hover:opacity-90" onclick="zoomImage(this.src)">
+                let explanationHtml = '';
+                if (q.explanation) {
+                    explanationHtml = `
+                        <div class="p-4 bg-emerald-50/80 border border-emerald-100 rounded-xl text-xs text-emerald-950 leading-relaxed mt-3">
+                            <span class="font-extrabold block mb-1 text-brand-950">💡 Pembahasan:</span>
+                            ${q.explanation}
                         </div>
                     `;
                 }
 
-                item.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <strong class="text-xs text-slate-700">Soal #${idx + 1}</strong>
+                const pts = Math.round(100 / total);
+
+                let statusBadge = '';
+                if (isCorrect) {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 font-extrabold text-[11px] px-3 py-1 rounded-full border border-emerald-200 whitespace-nowrap shrink-0">✔ Benar (+${pts})</span>`;
+                } else if (userAnsKey) {
+                    statusBadge = `<span class="bg-rose-100 text-rose-800 font-extrabold text-[11px] px-3 py-1 rounded-full border border-rose-200 whitespace-nowrap shrink-0">✕ Salah</span>`;
+                } else {
+                    statusBadge = `<span class="bg-slate-100 text-slate-700 font-extrabold text-[11px] px-3 py-1 rounded-full border border-slate-200 whitespace-nowrap shrink-0">⚪ Kosong</span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
+                        <span class="font-extrabold text-slate-800 text-xs sm:text-sm whitespace-nowrap">Soal #${idx + 1}</span>
                         ${statusBadge}
                     </div>
-                    <p class="text-xs sm:text-sm font-medium text-slate-800 mb-2">${escapeAndFormatHTML(q.question)}</p>
-                    ${reviewImageHTML}
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-2">
-                        <div class="p-2.5 rounded-xl bg-white border">
-                            <span class="text-slate-400 block font-bold text-[10px]">Jawaban Anda:</span>
-                            <span class="${isCorrect ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}">${escapeAndFormatHTML(userAnsText)}</span>
+
+                    <div class="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed pt-1">${q.text}</div>
+                    ${imageHtml}
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
+                        <div class="p-3.5 rounded-xl border ${
+                            isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-900 font-bold' : (userAnsKey ? 'bg-rose-50 border-rose-200 text-rose-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 font-bold')
+                        }">
+                            <span class="text-[10px] text-slate-500 block uppercase font-medium mb-0.5">Jawaban Anda:</span>
+                            <span>${userAnsKey ? `${userAnsKey}. ${userOptText}` : '❌ Tidak Dijawab'}</span>
                         </div>
-                        <div class="p-2.5 rounded-xl bg-white border">
-                            <span class="text-slate-400 block font-bold text-[10px]">Kunci Jawaban:</span>
-                            <span class="text-indigo-700 font-bold">${escapeAndFormatHTML(keyAnsText)}</span>
+                        <div class="p-3.5 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-900 font-bold">
+                            <span class="text-[10px] text-slate-500 block uppercase font-medium mb-0.5">Kunci Jawaban:</span>
+                            <span>${q.correct}. ${correctOptText}</span>
                         </div>
                     </div>
-                    ${q.explanation ? `<div class="text-xs text-slate-600 bg-white/90 p-2.5 rounded-xl border border-slate-200 italic mt-2"><strong class="text-indigo-900">Pembahasan:</strong> ${escapeAndFormatHTML(q.explanation)}</div>` : ''}
+
+                    ${explanationHtml}
                 `;
 
-                container.appendChild(item);
+                reviewContainer.appendChild(card);
+            });
+
+            showScreen('screenResult');
+            triggerKaTeXInElement(reviewContainer);
+        }
+
+        function openBankModal(defaultTab = 'list') {
+            document.getElementById('bankModal').classList.remove('hidden');
+            switchBankTab(defaultTab);
+            renderModalBankList();
+        }
+
+        function closeBankModal() {
+            document.getElementById('bankModal').classList.add('hidden');
+        }
+
+        function switchBankTab(tabName) {
+            activeBankTab = tabName;
+
+            ['List', 'Ai', 'Json'].forEach(t => {
+                const btn = document.getElementById(`tabBtn${t}`);
+                const content = document.getElementById(`tabContent${t}`);
+                
+                if (t.toLowerCase() === tabName) {
+                    btn.className = "px-4 py-2.5 rounded-t-xl text-xs font-bold transition flex items-center gap-2 border-b-2 border-brand-600 text-brand-700 bg-white";
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = "px-4 py-2.5 rounded-t-xl text-xs font-bold transition flex items-center gap-2 text-slate-500 hover:text-slate-700";
+                    content.classList.add('hidden');
+                }
             });
         }
 
-        function toggleReviewSection() {
-            const container = document.getElementById('reviewContainer');
-            const icon = document.getElementById('reviewChevron');
-            container.classList.toggle('hidden');
-            icon.classList.toggle('rotate-180');
+        function renderModalBankList() {
+            const container = document.getElementById('modalBankContainer');
+            container.innerHTML = '';
+
+            samplePackages.forEach(pkg => {
+                const item = document.createElement('div');
+                item.className = "bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-center justify-between gap-4 hover:border-slate-300 transition";
+                
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-brand-600 font-bold text-lg">
+                            📄
+                        </div>
+                        <div>
+                            <h4 class="font-extrabold text-slate-800 text-sm">${pkg.title}</h4>
+                            <div class="flex items-center gap-3 text-[11px] text-slate-500 font-medium">
+                                <span>${pkg.questions.length} Soal</span>
+                                <span>•</span>
+                                <span>${pkg.duration} Menit</span>
+                                <span>•</span>
+                                <span>ID: ${pkg.id}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="openPreviewModal('${pkg.id}')" title="Pratinjau" class="px-3 py-1.5 bg-white text-emerald-700 border border-slate-200 rounded-lg text-xs font-bold hover:bg-emerald-50 transition">
+                            👁
+                        </button>
+                        <button onclick="downloadExam('${pkg.id}')" title="Unduh" class="px-3 py-1.5 bg-white text-emerald-600 border border-slate-200 rounded-lg text-xs font-bold hover:bg-emerald-50 transition">
+                            📥
+                        </button>
+                        <button onclick="deleteExam('${pkg.id}')" title="Hapus" class="px-3 py-1.5 bg-white text-rose-600 border border-slate-200 rounded-lg text-xs font-bold hover:bg-rose-50 transition">
+                            🗑
+                        </button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+
+            document.getElementById('modalBankCount').innerText = samplePackages.length;
         }
 
-        function restartCurrentExam() {
-            studentAnswers = {};
-            doubtStatus = {};
-            currentIndex = 0;
-            remainingSeconds = (currentExam.duration || 30) * 60;
-
-            document.getElementById('screen-result').classList.add('hidden');
-            document.getElementById('screen-result').classList.remove('flex');
-            document.getElementById('screen-exam').classList.remove('hidden');
-            document.getElementById('screen-exam').classList.add('flex');
-
-            startTimer();
-            renderQuestion();
-            renderQuestionGrid();
-        }
-
-        function returnToHome() {
-            document.getElementById('screen-result').classList.add('hidden');
-            document.getElementById('screen-result').classList.remove('flex');
-            document.getElementById('screen-login').classList.remove('hidden');
-        }
-
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(()=>{});
+        function updateFileName() {
+            const fileInput = document.getElementById('aiFile');
+            const nameSpan = document.getElementById('aiFileName');
+            if (fileInput.files.length > 0) {
+                nameSpan.innerText = fileInput.files[0].name;
+                nameSpan.classList.remove('text-slate-400');
+                nameSpan.classList.add('text-slate-700', 'font-semibold');
             } else {
-                if (document.exitFullscreen) document.exitFullscreen();
+                nameSpan.innerText = 'Tidak ada file yang dipilih';
+                nameSpan.classList.add('text-slate-400');
             }
         }
 
-        // ================= INTEGRASI LANGSUNG GEMINI AI & FILE RUJUKAN =================
-
-        function handleReferenceFileUpload(e) {
-            const file = e.target.files[0];
-            const statusText = document.getElementById('fileStatusText');
-            attachedFileBase64 = null;
-            attachedFileType = null;
-
-            if (!file) {
-                statusText.innerText = "Belum ada file diunggah.";
-                return;
-            }
-
-            if (file.size > 20 * 1024 * 1024) {
-                alert("Ukuran file terlalu besar (maksimal 20 MB).");
-                statusText.innerText = "Gagal: Ukuran file melebihi 20 MB.";
-                return;
-            }
-
-            statusText.innerText = `Membaca berkas: ${file.name} (${Math.round(file.size/1024)} KB)...`;
-
-            const reader = new FileReader();
-
-            const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-            const isImage = file.type.startsWith('image/');
-
-            if (isImage || isPdf) {
-                reader.onload = function(evt) {
-                    const base64Data = evt.target.result.split(',')[1];
-                    attachedFileBase64 = base64Data;
-                    attachedFileType = isPdf ? 'application/pdf' : file.type;
-                    statusText.innerText = `✓ File ${isPdf ? 'PDF' : 'gambar'} terlampir: ${file.name}`;
-                };
-                reader.readAsDataURL(file);
-            } else {
-                reader.onload = function(evt) {
-                    const textContent = evt.target.result;
-                    const textInput = document.getElementById('aiTextContextInput');
-                    textInput.value = (textInput.value ? textInput.value + "\n\n" : "") + `--- MATERI DARI FILE ${file.name} ---\n` + textContent;
-                    statusText.innerText = `✓ Teks dari file ${file.name} telah disisipkan ke kotak materi.`;
-                };
-                reader.readAsText(file);
-            }
-            e.target.value = ''; // Reset file input
+        function useRecommendedKey() {
+            const sampleKey = document.getElementById('sampleKeyText').innerText.trim();
+            document.getElementById('aiApiKey').value = sampleKey;
+            showToast('Gemini API Key Rekomendasi diterapkan!', '✅');
         }
 
-        async function generateExamWithGemini() {
-            const userApiKey = document.getElementById('geminiApiKeyInput')?.value?.trim() || DEFAULT_API_KEY_PRESET;
-            if (userApiKey) {
-                localStorage.setItem('cbt_gemini_api_key', userApiKey);
-            }
-
-            const topic = document.getElementById('aiTopicInput').value.trim() || 'Pengetahuan Umum';
-            const contextText = document.getElementById('aiTextContextInput').value.trim();
+        async function generateWithAI() {
+            const apiKey = document.getElementById('aiApiKey').value.trim();
+            const topic = document.getElementById('aiTopic').value.trim();
+            const contextText = document.getElementById('aiTextContext').value.trim();
             const count = document.getElementById('aiQuestionCount').value;
-            const btn = document.getElementById('btnGenerateGemini');
+            const btn = document.getElementById('btnGenerateAi');
 
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Gemini Sedang Menyusun Soal...`;
-
-            try {
-                const systemPrompt = `Anda adalah pembuat soal ujian pilihan ganda (A-E) tingkat profesional. Tugas Anda adalah membuat ${count} soal pilihan ganda berkualitas tinggi berdasarkan materi/rujukan yang diberikan.
-
-Sertakan field "image" (string kosong "" atau URL gambar jika ada referensi gambar spesifik). Wajib mengembalikan output JSON MURNI sesuai schema berikut tanpa tambahan teks markdown lain:
-[
-  {
-    "question": "Isi pertanyaan di sini...",
-    "image": "",
-    "options": ["Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E"],
-    "answer": 1,
-    "explanation": "Penjelasan ringkas mengapa jawaban tersebut benar."
-  }
-]
-Catatan: 'answer' harus berupa angka indeks (0 untuk A, 1 untuk B, 2 untuk C, 3 untuk D, 4 untuk E).`;
-
-                const userPromptText = `Topik/Judul Ujian: ${topic}\n\nRujukan Materi/Kisi-Kisi Tambahan:\n${contextText || "Gunakan pengetahuan umum sesuai topik."}\n\nBuatkan ${count} soal pilihan ganda lengkap dengan 5 pilihan jawaban (A-E) dan kunci jawabannya.`;
-
-                const parts = [{ text: userPromptText }];
-
-                if (attachedFileBase64 && attachedFileType) {
-                    parts.push({
-                        inlineData: {
-                            mimeType: attachedFileType,
-                            data: attachedFileBase64
-                        }
-                    });
-                }
-
-                const payload = {
-                    contents: [{ parts: parts }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                    generationConfig: {
-                        responseMimeType: "application/json"
-                    }
-                };
-
-                const modelsToTry = [
-                    'gemini-2.5-flash',
-                    'gemini-1.5-flash',
-                    'gemini-2.0-flash',
-                    'gemini-3-flash-preview'
-                ];
-
-                let response = null;
-                let lastError = null;
-
-                for (const modelName of modelsToTry) {
-                    try {
-                        const apiKey = userApiKey || DEFAULT_API_KEY_PRESET;
-                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-
-                        const res = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-
-                        if (res.ok) {
-                            response = res;
-                            break;
-                        } else {
-                            lastError = `Model ${modelName}: HTTP ${res.status}`;
-                        }
-                    } catch (err) {
-                        lastError = err.message;
-                    }
-                }
-
-                if (!response) {
-                    throw new Error(`Semua endpoint model Gemini menolak permintaan (${lastError || '404'}).\n\nTips: Pastikan Anda telah mengisikan API Key gratis Anda pada kolom 'Gemini API Key'.`);
-                }
-
-                const result = await response.json();
-                let jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (!jsonText) {
-                    throw new Error('Gemini tidak mengembalikan respons teks.');
-                }
-
-                jsonText = cleanJsonText(jsonText);
-
-                document.getElementById('importJsonArea').value = jsonText;
-                document.getElementById('importExamTitle').value = topic;
-
-                saveImportedPackage();
-
-            } catch (err) {
-                alert('Gagal Generate Soal via Gemini:\n' + err.message + '\n\nAtau gunakan tab "Tempel JSON Manual" jika ingin memicu soal via obrolan Gemini.');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-bolt text-amber-300"></i> Generate Soal Otomatis`;
-            }
-        }
-
-        function copyGeminiPrompt() {
-            const prompt = `Tolong buatkan [10] soal pilihan ganda tentang [Tuliskan Topik / Mata Pelajaran Di Sini] lengkap dengan opsi A-E dan kunci jawaban dalam format JSON murni tanpa penjelasan awalan/akhiran.
+            const systemPrompt = `Anda adalah pembuat soal kuis CBT profesional. Buatlah ${count} soal pilihan ganda lengkap dengan opsi A-E dan kunci jawaban dalam format JSON murni tanpa penjelasan awalan/akhiran. Jika terdapat ekspresi/rumus matematika, wajib diapit simbol $ untuk inline (contoh: $f(x) = \\sqrt{x}$) atau $$ untuk block.
 
 Gunakan format JSON persis seperti ini:
 [
@@ -1501,90 +1522,210 @@ Gunakan format JSON persis seperti ini:
 
 Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk C, 3 untuk D, 4 untuk E).`;
 
-            navigator.clipboard.writeText(prompt).then(() => {
-                alert('Prompt Gemini berhasil disalin ke clipboard!');
-            }).catch(() => {
-                alert('Gagal menyalin otomatis. Silakan copy secara manual.');
+            let userQuery = `Topik/Mata Pelajaran: ${topic || 'Pengetahuan Umum'}.\nJumlah Soal: ${count}.\n`;
+            if (contextText) {
+                userQuery += `Rangkuman/Materi Rujukan:\n${contextText}\n`;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `⏳ Memproses Gemini AI...`;
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                const res = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP Error status ${res.status}`);
+                }
+
+                const data = await res.json();
+                const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                
+                const parsedQuestions = cleanAndParseJSON(jsonText);
+                generatedAiQuestions = convertAiQuestionsToStandard(parsedQuestions);
+                
+                if (!document.getElementById('aiPkgTitle').value) {
+                    document.getElementById('aiPkgTitle').value = topic ? `Kuis ${topic}` : `Paket Soal AI ${new Date().toLocaleDateString('id-ID')}`;
+                }
+
+                showToast(`Berhasil generate ${generatedAiQuestions.length} soal AI! Klik Simpan Paket Soal.`, '✅');
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal terhubung ke Gemini API. Periksa API Key Anda!', '❌');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `⚡ Generate Soal Otomatis`;
+            }
+        }
+
+        function convertAiQuestionsToStandard(rawList) {
+            const optionKeys = ['A', 'B', 'C', 'D', 'E'];
+            
+            if (!Array.isArray(rawList) && typeof rawList === 'object' && rawList !== null) {
+                rawList = [rawList];
+            }
+
+            if (!Array.isArray(rawList)) {
+                return [];
+            }
+
+            return rawList.map((item, idx) => {
+                const opts = (item.options || []).map((oText, oIdx) => ({
+                    key: optionKeys[oIdx] || String.fromCharCode(65 + oIdx),
+                    text: String(oText)
+                }));
+
+                let correctKey = 'A';
+                if (typeof item.answer === 'number') {
+                    correctKey = optionKeys[item.answer] || 'A';
+                } else if (typeof item.answer === 'string') {
+                    const cleanAnswer = item.answer.trim().toUpperCase();
+                    if (optionKeys.includes(cleanAnswer)) {
+                        correctKey = cleanAnswer;
+                    } else if (!isNaN(parseInt(cleanAnswer))) {
+                        correctKey = optionKeys[parseInt(cleanAnswer)] || 'A';
+                    }
+                }
+
+                return {
+                    id: idx + 1,
+                    text: item.question || item.soal || 'Pertanyaan',
+                    image: item.image || item.gambar || null,
+                    explanation: item.explanation || item.pembahasan || null,
+                    options: opts,
+                    correct: correctKey
+                };
             });
         }
 
-        function parseGeminiAnswer(rawAnswer) {
-            if (typeof rawAnswer === 'number') return rawAnswer;
-            if (typeof rawAnswer === 'string') {
-                const clean = rawAnswer.trim().toUpperCase();
-                const map = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4 };
-                if (map[clean] !== undefined) return map[clean];
-                const parsedInt = parseInt(clean, 10);
-                if (!isNaN(parsedInt)) return parsedInt;
-            }
-            return 0;
+        function copyGeminiPrompt() {
+            const prompt = `Tolong buatkan [10] soal pilihan ganda tentang [Tuliskan Topik / Mata Pelajaran Di Sini] lengkap dengan opsi A-E dan kunci jawaban dalam format JSON murni tanpa penjelasan awalan/akhiran. Jika terdapat ekspresi/rumus matematika, wajib diapit simbol $ untuk inline (contoh: $f(x) = \\sqrt{x}$) atau $$ untuk block.
+
+Gunakan format JSON persis seperti ini:
+[
+  {
+    "question": "Isi pertanyaan di sini...",
+    "image": "URL_gambar_jika_ada_atau_kosongkan",
+    "options": ["Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E"],
+    "answer": 0,
+    "explanation": "Penjelasan singkat jawaban benar"
+  }
+]
+
+Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk C, 3 untuk D, 4 untuk E).`;
+
+            navigator.clipboard.writeText(prompt);
+            showToast('Prompt JSON Murni berhasil disalin!', '📋');
         }
 
-        function saveImportedPackage() {
-            const title = document.getElementById('importExamTitle').value.trim() || 'Paket Soal Baru Gemini';
-            const duration = parseInt(document.getElementById('importExamDuration').value, 10) || 30;
-            const rawJsonText = document.getElementById('importJsonArea').value;
-            const jsonText = cleanJsonText(rawJsonText);
+        function cleanAndParseJSON(rawInput) {
+            if (!rawInput) throw new Error("Teks JSON kosong.");
 
-            if (!jsonText) {
-                alert('Silakan tempel atau generate teks JSON soal terlebih dahulu.');
+            let cleaned = rawInput.trim();
+
+            cleaned = cleaned.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+            const firstSquare = cleaned.indexOf('[');
+            const lastSquare = cleaned.lastIndexOf(']');
+            const firstCurly = cleaned.indexOf('{');
+            const lastCurly = cleaned.lastIndexOf('}');
+
+            if (firstSquare !== -1 && lastSquare !== -1 && lastSquare > firstSquare) {
+                cleaned = cleaned.substring(firstSquare, lastSquare + 1);
+            } else if (firstCurly !== -1 && lastCurly !== -1 && lastCurly > firstCurly) {
+                cleaned = cleaned.substring(firstCurly, lastCurly + 1);
+            }
+
+            cleaned = cleaned.replace(/\\([a-zA-Z]+)/g, (match, p1) => {
+                const validJsonEscapes = ['b', 'f', 'n', 'r', 't', 'u', '"', '\\', '/'];
+                if (validJsonEscapes.includes(p1[0])) return match;
+                return '\\\\' + p1;
+            });
+
+            try {
+                return JSON.parse(cleaned);
+            } catch (err) {
+                cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
+                return JSON.parse(cleaned);
+            }
+        }
+
+        function saveCurrentPackage() {
+            let title = '';
+            let duration = 30;
+            let questionsList = [];
+
+            if (activeBankTab === 'ai') {
+                title = document.getElementById('aiPkgTitle').value.trim() || 'Paket Soal AI';
+                duration = parseInt(document.getElementById('aiPkgDuration').value) || 30;
+                
+                if (!generatedAiQuestions || generatedAiQuestions.length === 0) {
+                    showToast('Silakan klik Generate Soal Otomatis terlebih dahulu!', '⚠️');
+                    return;
+                }
+                questionsList = generatedAiQuestions;
+            } else if (activeBankTab === 'json') {
+                title = document.getElementById('jsonPkgTitle').value.trim() || 'Paket Soal Impor';
+                duration = parseInt(document.getElementById('jsonPkgDuration').value) || 30;
+                const rawJson = document.getElementById('jsonInput').value.trim();
+
+                if (!rawJson) {
+                    showToast('Silakan tempelkan kode JSON terlebih dahulu!', '⚠️');
+                    return;
+                }
+
+                try {
+                    const parsedData = cleanAndParseJSON(rawJson);
+                    questionsList = convertAiQuestionsToStandard(parsedData);
+
+                    if (!questionsList || questionsList.length === 0) {
+                        showToast('Tidak ditemukan soal yang valid dalam JSON!', '⚠️');
+                        return;
+                    }
+                } catch (e) {
+                    console.error("JSON Parsing Error:", e);
+                    showToast(`JSON tidak valid: ${e.message}`, '❌');
+                    return;
+                }
+            } else {
+                closeBankModal();
                 return;
             }
 
-            try {
-                const rawParsed = JSON.parse(jsonText);
-                if (!Array.isArray(rawParsed) || rawParsed.length === 0) {
-                    throw new Error('Data JSON harus berupa list/array dari pertanyaan.');
-                }
+            const newPkg = {
+                id: `pkg-${Math.floor(100000 + Math.random() * 900000)}`,
+                title: title,
+                duration: duration,
+                questions: questionsList
+            };
 
-                const normalizedQuestions = rawParsed.map((item, idx) => {
-                    if (!item.question || !Array.isArray(item.options)) {
-                        throw new Error(`Format soal nomor ${idx + 1} tidak valid (harus ada "question" & "options").`);
-                    }
+            samplePackages.unshift(newPkg);
+            renderDashboardCards();
+            closeBankModal();
 
-                    return {
-                        question: item.question,
-                        image: item.image || '',
-                        options: item.options,
-                        answer: parseGeminiAnswer(item.answer),
-                        explanation: item.explanation || ''
-                    };
-                });
+            document.getElementById('jsonInput').value = '';
+            document.getElementById('aiPkgTitle').value = '';
+            document.getElementById('jsonPkgTitle').value = '';
+            generatedAiQuestions = null;
 
-                const newPackage = {
-                    id: 'pkg-' + Date.now(),
-                    title: title,
-                    duration: duration,
-                    questions: normalizedQuestions
-                };
-
-                examPackages.unshift(newPackage);
-                savePackages();
-                renderExamSelectOptions();
-
-                document.getElementById('importExamTitle').value = '';
-                document.getElementById('importJsonArea').value = '';
-
-                alert(`Berhasil! Paket soal "${title}" berisi ${normalizedQuestions.length} pertanyaan siap digunakan.`);
-                switchImportTab('manage');
-            } catch(err) {
-                alert('Gagal Mengimpor JSON: ' + err.message);
-            }
+            showToast(`Paket "${title}" berhasil disimpan!`, '✅');
         }
 
-        function escapeAndFormatHTML(str) {
-            if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/\n/g, '<br>');
-        }
+        window.onload = function() {
+            showScreen('screenLogin');
+            renderDashboardCards();
+            initKaTeX();
+        };
     </script>
-  <!-- Google Font: Montserrat -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </body>
 </html>
