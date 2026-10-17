@@ -589,27 +589,28 @@
                 </div>
 
                 <div id="tabContentJson" class="hidden space-y-5">
+                    <!-- Amber Box yang telah digabungkan dengan Tombol Import File JSON -->
                     <div class="bg-amber-50 rounded-2xl p-4 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div class="flex items-center gap-2">
                             <span class="text-base">📋</span>
                             <div>
-                                <h4 class="text-xs font-extrabold text-amber-900">Salin Prompt khusus untuk Gemini Chat:</h4>
-                                <p class="text-[11px] text-amber-700">Gunakan tombol di samping jika Anda ingin generate secara manual di aplikasi Gemini Chat.</p>
+                                <h4 class="text-xs font-extrabold text-amber-900">Salin Prompt atau Import File JSON:</h4>
+                                <p class="text-[11px] text-amber-700">Gunakan opsi di samping untuk menyalin prompt Gemini Chat atau mengunggah file .json Anda secara langsung.</p>
                             </div>
                         </div>
-                        <button onclick="copyGeminiPrompt()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5 shrink-0 w-full sm:w-auto justify-center">
-                            📋 Salin Prompt
-                        </button>
-                    </div>
-
-                    <div>
-                        <div class="flex items-center justify-between mb-1.5">
-                            <label class="block text-xs font-bold text-slate-700">Tempel (Paste) Hasil JSON Gemini Di Sini atau Upload File .json:</label>
-                            <label class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl cursor-pointer transition flex items-center gap-1.5 shadow-sm">
+                        <div class="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                            <button onclick="copyGeminiPrompt()" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+                                📋 Salin Prompt
+                            </button>
+                            <label class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl cursor-pointer transition flex items-center gap-1.5 shadow-sm">
                                 📂 Import File JSON
                                 <input type="file" id="jsonFileInput" accept=".json" onchange="handleJsonFileUpload(event)" class="hidden">
                             </label>
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Tempel (Paste) Hasil JSON Gemini Di Sini:</label>
                         <textarea id="jsonInput" rows="7" placeholder='[&#10;  {&#10;    "question": "Diketahui fungsi $f(x) = \\sqrt{x}$. Nilai $f(4)$ adalah...",&#10;    "image": "",&#10;    "options": ["Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E"],&#10;    "answer": 1,&#10;    "explanation": "Akar dari 4 adalah 2."&#10;  }&#10;]' 
                             class="w-full p-4 bg-slate-900 text-slate-100 font-mono text-xs rounded-2xl border border-slate-800 focus:border-brand-600 outline-none custom-scrollbar leading-relaxed"></textarea>
                     </div>
@@ -1467,9 +1468,7 @@
             triggerKaTeXInElement(reviewContainer);
         }
 
-        // ==========================================
         // FITUR EKSPOR SOAL KE PDF
-        // ==========================================
         function exportExamToPdf(pkgId, includeAnswers = true) {
             let pkg = null;
             if (pkgId) {
@@ -1733,7 +1732,6 @@ Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk 
                 try {
                     const parsed = cleanAndParseJSON(textContent);
                     
-                    // Jika file yang diunggah berupa Paket Lengkap (hasil dari downloadExam)
                     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && parsed.questions) {
                         if (parsed.title) document.getElementById('jsonPkgTitle').value = parsed.title;
                         if (parsed.duration) document.getElementById('jsonPkgDuration').value = parsed.duration;
@@ -1753,7 +1751,6 @@ Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk 
             const optionKeys = ['A', 'B', 'C', 'D', 'E'];
             
             if (!Array.isArray(rawList) && typeof rawList === 'object' && rawList !== null) {
-                // Jika input berupa paket utuh
                 if (Array.isArray(rawList.questions)) {
                     return rawList.questions.map((q, idx) => ({
                         id: idx + 1,
@@ -1824,13 +1821,16 @@ Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk 
             showToast('Prompt JSON Murni berhasil disalin!', '📋');
         }
 
+        // PEMBERSIH & PARSER JSON YANG LEBIH TANGGUH TERHADAP ESCAPE CHARACTER LATEX
         function cleanAndParseJSON(rawInput) {
             if (!rawInput) throw new Error("Teks JSON kosong.");
 
             let cleaned = rawInput.trim();
 
+            // 1. Bersihkan pemformatan markdown ```json ... ```
             cleaned = cleaned.replace(/```json/gi, '').replace(/```/g, '').trim();
 
+            // 2. Ekstrak blok JSON array/object saja
             const firstSquare = cleaned.indexOf('[');
             const lastSquare = cleaned.lastIndexOf(']');
             const firstCurly = cleaned.indexOf('{');
@@ -1842,17 +1842,23 @@ Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk 
                 cleaned = cleaned.substring(firstCurly, lastCurly + 1);
             }
 
-            cleaned = cleaned.replace(/\\([a-zA-Z]+)/g, (match, p1) => {
-                const validJsonEscapes = ['b', 'f', 'n', 'r', 't', 'u', '"', '\\', '/'];
-                if (validJsonEscapes.includes(p1[0])) return match;
-                return '\\\\' + p1;
-            });
-
+            // 3. Coba parse langsung dulu
             try {
                 return JSON.parse(cleaned);
-            } catch (err) {
-                cleaned = cleaned.replace(/,\s*([\]}])/g, '$1');
-                return JSON.parse(cleaned);
+            } catch (err1) {
+                // Jika gagal karena karakter backslash tidak lolos escape (seperti \sqrt),
+                // Lakukan auto-fix untuk backslash tunggal pada sintaks LaTeX
+                try {
+                    let sanitized = cleaned.replace(/\\([a-zA-Z]+)/g, (match, p1) => {
+                        const validJsonEscapes = ['b', 'f', 'n', 'r', 't', 'u', '"', '\\', '/'];
+                        if (validJsonEscapes.includes(p1[0])) return match;
+                        return '\\\\' + p1;
+                    });
+                    sanitized = sanitized.replace(/,\s*([\]}])/g, '$1');
+                    return JSON.parse(sanitized);
+                } catch (err2) {
+                    throw err1;
+                }
             }
         }
 
@@ -1883,7 +1889,6 @@ Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk 
                 try {
                     const parsedData = cleanAndParseJSON(rawJson);
 
-                    // Jika memuat file ekspor utuh
                     if (parsedData && typeof parsedData === 'object' && !Array.isArray(parsedData) && parsedData.questions) {
                         if (parsedData.title) title = parsedData.title;
                         if (parsedData.duration) duration = parsedData.duration;
