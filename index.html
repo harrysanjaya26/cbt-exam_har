@@ -9,6 +9,9 @@
     <!-- Google Fonts Montserrat -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap" rel="stylesheet">
     
+    <!-- html2pdf.js library for direct client-side PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <!-- KaTeX for Math rendering -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     
@@ -366,17 +369,23 @@
                         </div>
 
                         <!-- Action Buttons Bottom -->
-                        <div class="pt-6 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3 no-print">
-                            <button onclick="retryCurrentExam()" class="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                        <div class="pt-6 border-t border-slate-200 grid grid-cols-2 sm:grid-cols-6 gap-2 sm:gap-3 no-print">
+                            <button onclick="retryCurrentExam()" class="px-3 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
                                 🔄 Ulangi Ujian
                             </button>
-                            <button onclick="openBankModal('ai')" class="px-4 py-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                            <button onclick="openBankModal('ai')" class="px-3 py-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
                                 ➕ Tambah Soal
                             </button>
-                            <button onclick="window.print()" class="px-4 py-3 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                            <button onclick="exportExamToPdf(currentPackage ? currentPackage.id : null, false)" class="px-3 py-3 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
+                                📄 PDF Polosan
+                            </button>
+                            <button onclick="exportExamToPdf(currentPackage ? currentPackage.id : null, true)" class="px-3 py-3 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
+                                📄 PDF Pembahasan
+                            </button>
+                            <button onclick="window.print()" class="px-3 py-3 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
                                 🖨️ Cetak Hasil
                             </button>
-                            <button onclick="showScreen('screenDashboard')" class="px-4 py-3 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                            <button onclick="showScreen('screenDashboard')" class="px-3 py-3 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
                                 🏠 Halaman Utama
                             </button>
                         </div>
@@ -595,7 +604,7 @@
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">Tempel (Paste) Hasil JSON Gemini Di Sini</label>
-                        <textarea id="jsonInput" rows="7" placeholder='[&#10;  {&#10;    "question": "Diketahui fungsi $f(x) = \\sqrt{x}$. Nilai $f(4)$ adalah...",&#10;    "image": "",&#10;    "options": ["1", "2", "3", "4", "5"],&#10;    "answer": 1,&#10;    "explanation": "Akar dari 4 adalah 2."&#10;  }&#10;]' 
+                        <textarea id="jsonInput" rows="7" placeholder='[&#10;  {&#10;    "question": "Diketahui fungsi $f(x) = \\sqrt{x}$. Nilai $f(4)$ adalah...",&#10;    "image": "",&#10;    "options": ["Opsi A", "Opsi B", "Opsi C", "Opsi D", "Opsi E"],&#10;    "answer": 1,&#10;    "explanation": "Akar dari 4 adalah 2."&#10;  }&#10;]' 
                             class="w-full p-4 bg-slate-900 text-slate-100 font-mono text-xs rounded-2xl border border-slate-800 focus:border-brand-600 outline-none custom-scrollbar leading-relaxed"></textarea>
                     </div>
 
@@ -647,7 +656,15 @@
 
             <div id="previewContainer" class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6 bg-slate-50/50"></div>
 
-            <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <div class="flex items-center gap-2">
+                    <button onclick="exportExamToPdf(activeEditPkgId, false)" class="px-3.5 py-2.5 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                        📄 Ekspor Soal Polosan
+                    </button>
+                    <button onclick="exportExamToPdf(activeEditPkgId, true)" class="px-3.5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                        📄 Ekspor PDF + Pembahasan
+                    </button>
+                </div>
                 <button onclick="closePreviewModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition">
                     Tutup Pratinjau
                 </button>
@@ -737,9 +754,9 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- JAVASCRIPT LOGIC WITH LOCALSTORAGE PERSISTENCE -->
     <script>
-        let samplePackages = [
+        const DEFAULT_PACKAGES = [
             {
                 id: 'pkg-179206',
                 title: 'Paket Soal Baru Gemini',
@@ -812,6 +829,31 @@
             }
         ];
 
+        let samplePackages = [];
+
+        function loadPackagesFromStorage() {
+            try {
+                const stored = localStorage.getItem('cbt_packages_data');
+                if (stored) {
+                    samplePackages = JSON.parse(stored);
+                } else {
+                    samplePackages = [...DEFAULT_PACKAGES];
+                    savePackagesToStorage();
+                }
+            } catch (err) {
+                console.error("Gagal memuat packages dari LocalStorage:", err);
+                samplePackages = [...DEFAULT_PACKAGES];
+            }
+        }
+
+        function savePackagesToStorage() {
+            try {
+                localStorage.setItem('cbt_packages_data', JSON.stringify(samplePackages));
+            } catch (err) {
+                console.error("Gagal menyimpan packages ke LocalStorage:", err);
+            }
+        }
+
         let currentUser = { nama: '', nim: '' };
         let currentPackage = null;
         let currentQuestionIndex = 0;
@@ -824,6 +866,12 @@
 
         let activeEditPkgId = null;
         let activeEditQuestionIdx = null;
+
+        // Auto-fix typo latex yang sering dihasilkan LLM (misal: \rac -> \frac)
+        function fixLatexSyntax(str) {
+            if (!str) return '';
+            return str.replace(/\\rac\{/g, '\\frac{');
+        }
 
         function triggerKaTeXInElement(element) {
             if (window.renderMathInElement && element) {
@@ -986,7 +1034,7 @@
                     explanationHtml = `
                         <div class="p-3.5 bg-emerald-50/70 border border-emerald-100 rounded-xl text-xs text-emerald-900 leading-relaxed mt-3">
                             <span class="font-extrabold block mb-1 text-brand-950">💡 Pembahasan:</span>
-                            ${q.explanation}
+                            ${fixLatexSyntax(q.explanation)}
                         </div>
                     `;
                 }
@@ -998,7 +1046,7 @@
                             ✏️ Edit Soal
                         </button>
                     </div>
-                    <div class="text-xs sm:text-sm font-medium text-slate-800 leading-relaxed">${q.text}</div>
+                    <div class="text-xs sm:text-sm font-medium text-slate-800 leading-relaxed">${fixLatexSyntax(q.text)}</div>
                     ${imageHtml}
                     <div class="space-y-2 pt-1">${optionsHtml}</div>
                     ${explanationHtml}
@@ -1074,6 +1122,7 @@
                 explanation: document.getElementById('editQExplanation').value.trim()
             };
 
+            savePackagesToStorage();
             closeEditQuestionModal();
             openPreviewModal(activeEditPkgId);
             renderDashboardCards();
@@ -1095,6 +1144,7 @@
 
         function deleteExam(pkgId) {
             samplePackages = samplePackages.filter(p => p.id !== pkgId);
+            savePackagesToStorage();
             renderDashboardCards();
             renderModalBankList();
             showToast('Paket soal berhasil dihapus', '🗑');
@@ -1151,7 +1201,7 @@
             document.getElementById('questionBadge').innerText = `Soal No. ${currentQuestionIndex + 1} dari ${currentPackage.questions.length}`;
             document.getElementById('chkDoubt').checked = !!userDoubts[q.id];
 
-            document.getElementById('questionText').innerHTML = q.text;
+            document.getElementById('questionText').innerHTML = fixLatexSyntax(q.text);
 
             const imgContainer = document.getElementById('questionImageContainer');
             const imgEl = document.getElementById('questionImage');
@@ -1364,7 +1414,7 @@
                     explanationHtml = `
                         <div class="p-4 bg-emerald-50/80 border border-emerald-100 rounded-xl text-xs text-emerald-950 leading-relaxed mt-3">
                             <span class="font-extrabold block mb-1 text-brand-950">💡 Pembahasan:</span>
-                            ${q.explanation}
+                            ${fixLatexSyntax(q.explanation)}
                         </div>
                     `;
                 }
@@ -1386,7 +1436,7 @@
                         ${statusBadge}
                     </div>
 
-                    <div class="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed pt-1">${q.text}</div>
+                    <div class="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed pt-1">${fixLatexSyntax(q.text)}</div>
                     ${imageHtml}
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
@@ -1394,7 +1444,7 @@
                             isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-900 font-bold' : (userAnsKey ? 'bg-rose-50 border-rose-200 text-rose-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-600 font-bold')
                         }">
                             <span class="text-[10px] text-slate-500 block uppercase font-medium mb-0.5">Jawaban Anda:</span>
-                            <span>${userAnsKey ? `${userAnsKey}. ${userOptText}` : '❌ Tidak Dijawab'}</span>
+                            <span>${userAnsKey ? `${userAnsKey}.${userOptText}` : '❌ Tidak Dijawab'}</span>
                         </div>
                         <div class="p-3.5 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-900 font-bold">
                             <span class="text-[10px] text-slate-500 block uppercase font-medium mb-0.5">Kunci Jawaban:</span>
@@ -1410,6 +1460,103 @@
 
             showScreen('screenResult');
             triggerKaTeXInElement(reviewContainer);
+        }
+
+        // ==========================================
+        // FITUR EKSPOR SOAL KE PDF (Dua Mode)
+        // ==========================================
+        function exportExamToPdf(pkgId, includeAnswers = true) {
+            let pkg = null;
+            if (pkgId) {
+                pkg = samplePackages.find(p => p.id === pkgId);
+            } else if (currentPackage) {
+                pkg = currentPackage;
+            }
+
+            if (!pkg) {
+                showToast('Pilih paket soal terlebih dahulu!', '⚠️');
+                return;
+            }
+
+            const labelType = includeAnswers ? 'Soal + Pembahasan' : 'Soal Polosan';
+            showToast(`Menyiapkan dokumen PDF (${labelType})...`, '📄');
+
+            const pdfContainer = document.createElement('div');
+            pdfContainer.style.padding = '24px';
+            pdfContainer.style.fontFamily = 'Montserrat, sans-serif';
+            pdfContainer.style.color = '#1e293b';
+            pdfContainer.style.backgroundColor = '#ffffff';
+
+            let contentHtml = `
+                <div style="border-bottom: 2px solid #059669; padding-bottom: 12px; margin-bottom: 20px;">
+                    <h2 style="font-size: 18px; font-weight: 800; color: #064e3b; margin: 0;">${pkg.title} ${includeAnswers ? '' : '(Lembar Soal Ujian)'}</h2>
+                    <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">
+                        Jumlah Soal: ${pkg.questions.length} Soal &nbsp;|&nbsp; Durasi: ${pkg.duration} Menit &nbsp;|&nbsp; ID: ${pkg.id}
+                    </p>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+            `;
+
+            pkg.questions.forEach((q, idx) => {
+                let optionsListHtml = '';
+                q.options.forEach(opt => {
+                    const isCorrectKey = includeAnswers && (opt.key === q.correct);
+                    optionsListHtml += `
+                        <div style="font-size: 11px; margin-bottom: 4px; ${isCorrectKey ? 'font-weight: 700; color: #047857;' : 'color: #334155;'}">
+                            <strong>${opt.key}.</strong> ${opt.text} ${isCorrectKey ? ' <span style="font-size: 9px; background: #d1fae5; color: #047857; padding: 1px 5px; border-radius: 4px;">(Kunci Jawaban)</span>' : ''}
+                        </div>
+                    `;
+                });
+
+                let imageTag = '';
+                if (q.image) {
+                    imageTag = `<div style="margin: 8px 0;"><img src="${q.image}" style="max-height: 180px; border-radius: 6px; border: 1px solid #e2e8f0;"></div>`;
+                }
+
+                let conceptHighlight = '';
+                if (includeAnswers && q.explanation) {
+                    conceptHighlight = `
+                        <div style="margin-top: 8px; padding: 10px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px; font-size: 10px; color: #064e3b; line-height: 1.5;">
+                            <strong style="color: #047857; font-size: 11px; display: block; margin-bottom: 3px;">💡 Konsep Dasar / Pembahasan:</strong>
+                            ${fixLatexSyntax(q.explanation)}
+                        </div>
+                    `;
+                }
+
+                contentHtml += `
+                    <div style="padding-bottom: 14px; border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
+                        <div style="font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 6px;">
+                            ${idx + 1}. ${fixLatexSyntax(q.text)}
+                        </div>
+                        ${imageTag}
+                        <div style="margin-left: 8px; margin-top: 6px;">
+                            ${optionsListHtml}
+                        </div>
+                        ${conceptHighlight}
+                    </div>
+                `;
+            });
+
+            contentHtml += `</div>`;
+            pdfContainer.innerHTML = contentHtml;
+
+            triggerKaTeXInElement(pdfContainer);
+
+            const suffix = includeAnswers ? 'Soal_dan_Pembahasan' : 'Lembar_Soal';
+            const opt = {
+                margin:       10,
+                filename:     `${pkg.title.replace(/\s+/g, '_')}_${suffix}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(pdfContainer).save().then(() => {
+                showToast(`Dokumen PDF (${labelType}) berhasil diunduh!`, '✅');
+            }).catch(err => {
+                console.error('Export PDF error:', err);
+                showToast('Gagal memproses ekspor PDF', '❌');
+            });
         }
 
         function openBankModal(defaultTab = 'list') {
@@ -1710,6 +1857,7 @@ Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk 
             };
 
             samplePackages.unshift(newPkg);
+            savePackagesToStorage();
             renderDashboardCards();
             closeBankModal();
 
@@ -1722,6 +1870,7 @@ Catatan: Kunci 'answer' menggunakan angka indeks (0 untuk A, 1 untuk B, 2 untuk 
         }
 
         window.onload = function() {
+            loadPackagesFromStorage();
             showScreen('screenLogin');
             renderDashboardCards();
             initKaTeX();
